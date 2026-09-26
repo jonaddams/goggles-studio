@@ -1,0 +1,89 @@
+{
+ "web": {
+  "results": [
+   {
+    "url": "https://www.sqlitetutorial.net/sqlite-python/",
+    "title": "SQLite Python"
+   },
+   {
+    "url": "https://docs.python.org/3/library/sqlite3.html",
+    "title": "sqlite3 \u2014 DB-API 2.0 interface for SQLite databases"
+   },
+   {
+    "url": "https://www.geeksforgeeks.org/python/python-sqlite/",
+    "title": "Python SQLite - GeeksforGeeks"
+   },
+   {
+    "url": "https://www.freecodecamp.org/news/work-with-sqlite-in-python-handbook/",
+    "title": "How to Work with SQLite in Python \u2013 A Handbook for Beginners"
+   },
+   {
+    "url": "https://www.tutorialspoint.com/sqlite/sqlite_python.htm",
+    "title": "SQLite - Python"
+   },
+   {
+    "url": "https://pynative.com/python-sqlite/",
+    "title": "Python SQLite tutorial using sqlite3"
+   },
+   {
+    "url": "https://www.sqlitetutorial.net/sqlite-python/sqlite-python-select/",
+    "title": "SQLite Python: Selecting Data from a Table"
+   },
+   {
+    "url": "https://medium.com/@drpa/leveraging-the-power-of-sqlite-with-python-a-practical-tutorial-167fc9dba1c7",
+    "title": "Leveraging the Power of SQLite with Python: A Practical Tutorial"
+   },
+   {
+    "url": "https://stackabuse.com/a-sqlite-tutorial-with-python/",
+    "title": "A SQLite Tutorial with Python"
+   },
+   {
+    "url": "https://realpython.com/ref/stdlib/sqlite3/",
+    "title": "sqlite3 | Python Standard Library \u2013 Real Python"
+   },
+   {
+    "url": "https://realpython.com/python-sqlite-sqlalchemy/",
+    "title": "Data Management With Python, SQLite, and SQLAlchemy \u2013 Real Python"
+   },
+   {
+    "url": "https://stackoverflow.com/questions/14209868/how-to-work-with-sqlite3-and-python",
+    "title": "sqlite - How to work with sqlite3 and Python - Stack Overflow"
+   },
+   {
+    "url": "https://sebastianraschka.com/Articles/2014_sqlite_in_python_tutorial.html",
+    "title": "Python SQLite: A Thorough Guide | Sebastian Raschka, PhD"
+   },
+   {
+    "url": "https://www.digitalocean.com/community/tutorials/how-to-use-the-sqlite3-module-in-python-3",
+    "title": "How To Use the sqlite3 Module in Python 3 | DigitalOcean"
+   },
+   {
+    "url": "https://www.freecodecamp.org/news/sqlite-python-beginners-tutorial/",
+    "title": "How to Use SQLite with Python"
+   },
+   {
+    "url": "https://zetcode.com/db/sqlitepythontutorial/",
+    "title": "SQLite Python - SQLite programming in Python"
+   },
+   {
+    "url": "https://amsterdam.tech/blog/python-sqlite-tutorial-the-ultimate-guide/",
+    "title": "Python SQLite Tutorial \u2014 The Ultimate Guide \u2013 Amsterdam Tech"
+   },
+   {
+    "url": "https://www.sitepoint.com/sqlite-python/",
+    "title": "An Introduction to SQLite with Python \u2014 SitePoint"
+   },
+   {
+    "url": "https://datagy.io/python-sqlite-tutorial/",
+    "title": "Python SQLite Tutorial - The Ultimate Guide \u2022 datagy"
+   },
+   {
+    "url": "https://blog.sqlite.ai/tutorial-sqlite3-sqlite-python",
+    "title": "A Guide to sqlite3: Python SQLite Tutorial with Examples"
+   }
+  ]
+ },
+ "videos": {
+  "mutated_by_goggles": false
+ }
+}
