@@ -5,7 +5,7 @@ interface Props {
   meta: {
     baselineCached: boolean
     callsMade: number
-    apiCallsThisSession: number
+    budgetRemaining: number | null
     elapsedMs: number
     mutatedByGoggles: Record<string, boolean>
   }
@@ -43,7 +43,13 @@ export function MetricsStrip({ metrics, meta }: Props) {
       <Tile
         label="Cost"
         value={`${meta.callsMade} call${meta.callsMade === 1 ? '' : 's'}`}
-        sub={meta.baselineCached ? 'baseline cached' : 'baseline fetched'}
+        sub={
+          meta.budgetRemaining === null
+            ? meta.baselineCached
+              ? 'baseline cached'
+              : 'baseline fetched'
+            : `${meta.budgetRemaining} left in today's budget`
+        }
       />
 
       {(crowded || reached) && (

@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "goggles-studio",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-09-22",
+
+  // The Vite build output. Requests that match a file are served straight from
+  // it; everything else falls back to index.html so the SPA can route.
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Only the API needs the Worker. Static requests skip it entirely.
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Per-IP burst guard. The binding only accepts a period of 10 or 60 seconds,
+  // so a longer window is not expressible here — spend is protected by
+  // DAILY_CALL_CAP below, and this just stops one client hammering the API.
+  "ratelimits": [
+    {
+      "name": "COMPARE_LIMIT",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+
+  // Holds the day's Brave call count. Create with:
+  //   wrangler kv namespace create BUDGET
+  // then paste the returned id here before deploying.
+  "kv_namespaces": [{ "binding": "BUDGET", "id": "REPLACE_WITH_ID_FROM_KV_NAMESPACE_CREATE" }],
+
+  "vars": {
+    // Hard ceiling on Brave calls per UTC day, across all visitors.
+    "DAILY_CALL_CAP": "200"
+  }
+}

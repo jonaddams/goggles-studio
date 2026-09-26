@@ -79,10 +79,17 @@ That is not obvious from the syntax, where all three read like symmetric knobs.
 ```
 src/lib/diff.ts       pure ranking diff — no network, no DOM, fully unit tested
 src/lib/brave.ts      Brave API client; GET, switching to POST for long Goggles
-src/server/cache.ts   baseline TTL cache + request throttle
-src/server/index.ts   Hono API: POST /api/compare
+src/server/app.ts     the Hono API, with storage and guards injected
+src/server/ports.ts   interfaces the two runtimes implement differently
+src/server/budget.ts  soft daily cap on API spend
+src/server/index.ts   Node entrypoint  — in-memory cache, no guards
+src/worker.ts         Worker entrypoint — Cache API, rate limit, budget, SPA
 src/ui/               React studio
 ```
+
+The API is a factory taking its dependencies as arguments, so the same routes run
+under Node locally and on Cloudflare in production with different storage behind
+them. `ports.ts` is the seam.
 
 Three decisions worth calling out:
 
@@ -115,17 +122,66 @@ a single url-encoded newline-separated string; POST takes `goggles` as a JSON ar
 The client uses GET and switches to POST past ~1500 characters, since a large Goggle
 otherwise risks request-URL length limits.
 
+## Deploying to Cloudflare
+
+One Worker serves both the built SPA and the API from the same origin.
+
+```bash
+wrangler login
+wrangler kv namespace create BUDGET      # paste the returned id into wrangler.jsonc
+wrangler secret put BRAVE_SEARCH_API_KEY # never in config or git
+npm run deploy
+```
+
+`npm run preview` runs the same Worker locally against `workerd` first. It reads the
+key from `.dev.vars` rather than `.env.local` — Wrangler's own convention, gitignored
+alongside it:
+
+```bash
+cp .env.local .dev.vars
+```
+
+A public deployment spends **your** Brave credits, and that is the binding
+constraint — not Cloudflare. The Workers free tier is 100k requests/day; a Brave
+free tier is roughly 1,000 calls/month at $5/1k, and a compare costs one or two.
+So the Worker adds two guards the Node server does not have:
+
+| Guard | Where | Effect |
+|---|---|---|
+| Per-IP burst limit | `ratelimits` binding | 10 compares/minute, then a 429 |
+| Daily spend cap | `DAILY_CALL_CAP` + KV | 200 Brave calls/UTC day, then a friendly 503 |
+
+Both refuse *before* any Brave call is made, so a hammered deployment costs nothing.
+
+The Worker also **fails closed**: if the `BUDGET` KV binding is missing, `/api/compare`
+returns a 503 rather than running without a cap. Skipping the KV step cannot
+accidentally ship an uncapped public deployment.
+
+Two things worth knowing if you copy this setup:
+
+- **The rate-limit binding only accepts a `period` of 10 or 60 seconds.** Longer
+  windows are not expressible, so it works as a burst guard and the daily KV counter
+  does the actual spend protection.
+- **Baselines move from a `Map` to the Cache API.** Workers isolates are ephemeral and
+  per-colo, so in-process caching loses the baseline constantly — which would quietly
+  double the API cost of every iteration. Measured on the deployed Worker: a cold run
+  is 2 calls / ~1500ms, the next run on the same query is 1 call / ~430ms.
+
+The KV counter is eventually consistent, so concurrent bursts can overshoot the cap
+slightly. That is deliberate — the job is preventing a runaway bill, not exact
+accounting.
+
 ## Tests
 
 ```bash
-npm test          # 19 tests
+npm test          # 25 tests
 npm run build     # typecheck + production build
 npm run shot      # regenerate docs/screenshot.png (needs `npm run dev` running)
 ```
 
 The diff engine is covered for rank deltas, discards, the `pushedOut`/`dropped`
-distinction, host concentration, and empty-result edge cases; the cache and throttle
-are tested with an injected clock. `npm run shot` doubles as a smoke test — it fails on
+distinction, host concentration, and empty-result edge cases; the cache, throttle and
+daily budget are tested with an injected clock. `npm run shot` doubles as a smoke test — it fails on
 any console error.
 
 ## Next

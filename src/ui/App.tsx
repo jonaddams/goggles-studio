@@ -13,7 +13,7 @@ interface CompareResponse {
   meta: {
     baselineCached: boolean
     callsMade: number
-    apiCallsThisSession: number
+    budgetRemaining: number | null
     elapsedMs: number
     fetchCount: number
     displayCount: number
