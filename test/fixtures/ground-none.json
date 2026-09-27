@@ -1,0 +1,390 @@
+{
+ "grounding": {
+  "generic": [
+   {
+    "url": "https://www.reddit.com/r/rust/comments/y7r9dg/what_is_the_difference_between_tokio_and_asyncstd/",
+    "title": "r/rust on Reddit: What is the difference between tokio and async-std?",
+    "snippets": [
+     "# What is the difference between tokio and async-std?\n## AldaronLau\nThere is one major difference in how they are implemented. Tokio futures and streams can only run within tokio itself due to how the executor/waker works with I/O apis like epoll/kqueue/iocp, running on the same thread. In async-std the FFI to these APIs is isolated to its own thread. This allows you to run the futures on any executor - including tokio's.",
+     "There are slightly different API surfaces in each crate, and there has been some talk about getting pieces of async-std into std itself with proposals of allowing sync/async versions of the same function without having to write the same code twice. If this ever were to happen (which it may not), then tokio would probably fall out of favor even though it's the more popular one / more actively maintained one now.",
+     "### mycoliza\nTo clarify, when you say \u201cTokio futures and streams\u201d can only be used with a Tokio runtime, you are specifically referring to Tokio\u2019s timers and I/O resources (such as sockets). Tokio\u2019s synchronization primitives, like channels and mutexes, are usable in any async environment.",
+     "It\u2019s also worth noting that async-std\u2019s timers and I/O resources *also* require an async-std runtime to be used. The difference is that the async-std resources bring their own runtime with them, and start it implicitly when they are first used, while Tokio requires the runtime to be started and configured explicitly.",
+     "The async-std resources implicitly start a runtime in the name of \u201cmodularity\u201d, but in practice, this does not actually make them more modular. If they are used in a project that is already using Tokio or another async runtime, async-std\u2019s resources will not be woken by that runtime, but by the async-std runtime that they implicitly create.",
+     "### JoshTriplett\nThere are a couple of additional key differences:\n\n* async-std focuses on providing, as much as possible, the std API minimally modified for async; tokio considers it more acceptable to diverge.",
+     "* async-std, in my opinion, places a higher value on providing a smooth gradient from being a user of async-std to being able to develop async components yourself. tokio, in my opinion, has a steeper cliff and separation there, between \"gluing together existing async components in your own async code\" and \"writing async components\"."
+    ]
+   },
+   {
+    "url": "https://corrode.dev/blog/async/",
+    "title": "The State of Async Rust: Runtimes",
+    "snippets": [
+     "# The State of Async Rust: Runtimes\n## One True Runtime\nWriting your async code in a runtime-agnostic fashion requires conditional compilation, compatibility layers and handling edge-cases.\n\nThis is the rationale behind most libraries gravitating towards the One True Runtime \u2014 Tokio.",
+     "## The case of async-std\n```\nuse std::fs::File;\nuse std::io::Read;\n\nfn main() -> std::io::Result<()> {\n    let mut file = File::open(\"foo.txt\")?;\n    let mut data = vec![];\n    file.read_to_end(&mut data)?;\n    Ok(())\n}\n```\n\nIn async-std, it is an async operation instead:",
+     "## Can\u2019t we just embrace Tokio?\nTokio stands as Rust\u2019s canonical async runtime.",
+     "\u201cThe easiest way to get started is to enable all features. Do this by enabling the full feature flag\u201d:\n\n```\ntokio = { version = \"1\", features = [\"full\"] }\n```\n\nBy doing so, one would set up a work-stealing, multi-threaded runtime which mandates that types are Send and 'static and makes it necessary to use synchronization primitives such as Arc and Mutex for all but the most trivial applications.\n\nUnderstanding \u2019static Lifetimes in Async Rust",
+     "In the realms of networking and web operations, it\u2019s likely that one of your dependencies integrates Tokio, effectively nudging you towards its adoption. At the time of writing, Tokio is used at runtime in 20,768 crates (of which 5,245 depend on it optionally).\n\nRuntime popularity bar chart between tokio, async-std, and smol with Tokiogreatly dominating"
+    ]
+   },
+   {
+    "url": "https://medium.com/@AlexanderObregon/async-programming-in-rust-exploring-tokio-and-async-std-97d4b524cef0",
+    "title": "Async Programming in Rust \u2014 Exploring Tokio and Async-std",
+    "snippets": [
+     "# Async Programming in Rust \u2014 Exploring Tokio and Async-std\n## Performance Differences Between Tokio and Async-std\nWhile both Tokio and Async-std are designed for high-performance asynchronous operations, the performance difference between them often boils down to specific use cases. For many applications, the differences might be minimal. Tokio, with its extensive set of features, is geared towards handling a vast number of simultaneous connections, making it a favored choice for high-concurrency network applications.",
+     "On the other hand, Async-std, which offers an experience closely mirroring the standard library, tends to deliver performance on par with Tokio for a broad spectrum of tasks.",
+     "## Under the Hood: How Does Async-std Implement async/await?\nMuch like Tokio, Async-std uses an event loop (or reactor) internally. When an asynchronous operation is await ed in Async-std, the task yields control back to this event loop, allowing it to perform other tasks.",
+     "A pivotal component of Async-std is its reactor, which drives async IO resources and schedules tasks. This operation mechanism mirrors Tokio's.",
+     "## Choosing between Tokio and Async-std\nWhen choosing between Tokio and Async-std, consider the ecosystem and the kind of support you need. If you need a larger ecosystem with more third-party libraries, Tokio might be the better choice. On the other hand, if simplicity and familiarity with the standard library are more important, Async-std could be a better fit.",
+     "## Conclusion\nAsynchronous programming in Rust is a powerful tool for writing high-performance applications. With the async/await syntax, it\u2019s easier than ever to write async code. Libraries like Tokio and Async-std provide runtimes for executing this code, each with their strengths."
+    ]
+   },
+   {
+    "url": "https://rustify.rs/articles/rust-async-runtimes-tokio-vs-async-std-2026",
+    "title": "Rust Async Runtimes: Tokio vs async-std vs smol 2026",
+    "snippets": [
+     "# Rust Async Runtimes: Tokio vs async-std vs smol 2026\n**TL;DR**: Rust's async/await compiles to state machines but needs a runtime to drive them. In 2026, Tokio dominates production use. async-std and smol are alternatives with different design philosophies. Unless you have a specific reason to avoid Tokio, use Tokio.",
+     "- **Tokio**: battle-tested, most ecosystem support, 150M+ downloads/month: the production standard\n- **async-std**: mirrors std API surface, simpler onboarding, smaller ecosystem\n\n- **Ecosystem lock-in**: most async crates (reqwest, sqlx, axum, tonic) require Tokio",
+     "## Which Runtime Should You Choose in 2026?\n**Choose Tokio unless you have a strong reason not to. Choose async-std only if its API style materially helps your team. Choose smol only if minimalism and custom composition matter more than ecosystem gravity.**",
+     "1. Choose Tokio if you are building a backend service, using Axum, reqwest, sqlx, or anything else in the mainstream async Rust ecosystem.\n2. Choose async-std if your team strongly prefers its std-like API surface and the ecosystem tradeoff is acceptable.",
+     "## Why Do Runtimes Exist in Rust?\n```\n// Without a runtime, this won't compile:\n// async fn main() { ... }  // Doesn't work without an executor\n \n// Tokio runtime:\n#[tokio::main]\nasync fn main() {\n    let result = some_async_fn().await;\n}\n \n// async-std runtime:\n#[async_std::main]\nasync fn main() {\n    let result = some_async_fn().await;\n}\n \n// Manual runtime (for embedded/custom needs):\nfn main() {\n    let rt = tokio::runtime::Runtime::new().unwrap();\n    rt.block_on(async {\n        some_async_fn().await;\n    });\n}\n```",
+     "## How Do the Runtimes Compare?\n| Feature | Tokio | async-std | smol |\n| --- | --- | --- | --- |\n| Downloads/month | 150M+ | 5M | 2M |\n| Thread model | Work-stealing pool | Thread pool | Composable |\n| I/O driver | epoll/kqueue/IOCP | async-io | polling |\n| Timers | tokio::time | async\\_std::task::sleep | smol::Timer |\n| Ecosystem | Largest (axum, reqwest, sqlx) | Moderate | Small |\n| Binary size | Medium | Medium | Small |\n| WASM support | current\\_thread flavor | Limited | Yes (with wasm32 executor) |\n| Stability | 1.0 (stable) | 1.0 (stable) | 2.0 (stable) |",
+     "## Which Crates Require Which Runtime?\n**Most production crates require Tokio:**\n\n```\n# These require Tokio: they won't work with async-std or smol directly:\nreqwest = \"0.12\"           # HTTP client (uses Tokio under the hood)\naxum = \"0.7\"              # Web framework (Tokio)\nsqlx = { version = \"0.8\", features = [\"postgres\", \"runtime-tokio\"] }\ntonic = \"0.12\"            # gRPC (Tokio)\ntokio-postgres = \"0.7\"\nredis = { version = \"0.26\", features = [\"tokio-comp\"] }\n \n# async-std compatible:\nsurf = \"2\"                 # HTTP client (async-std ecosystem)\ntide = \"0.16\"             # Web framework (async-std)\nasync-postgres = \"0.17\"\n \n# Runtime-agnostic (works with either):\nfutures = \"0.3\"           # Core future traits\nasync-trait = \"0.1\"       # Async traits\npin-project = \"1\"\n```",
+     "## Frequently Asked Questions\n### Does the runtime matter for performance?\nFor most applications: no. Tokio and async-std have similar throughput in practice. smol has lower overhead for simple workloads. CPU-bound tasks don't benefit from any async runtime: use tokio::task::spawn_blocking to offload blocking work."
+    ]
+   },
+   {
+    "url": "https://users.rust-lang.org/t/tokio-async-std-compatibility/102617",
+    "title": "Tokio & async_std compatibility - help - The Rust Programming Language Forum",
+    "snippets": [
+     "# Tokio & async\\_std compatibility\nAs far as my understanding goes - both async_std and tokio are different runtimes and are incompatible.",
+     "I only got rid of async-std because I wanted to trim down on dependencies for the sake of purism and build speed. I didn't have issues from using both.\n\nPretty much all channel implementations can send messages between runtimes just fine. This includes the Tokio mpsc channel."
+    ]
+   },
+   {
+    "url": "https://users.rust-lang.org/t/why-does-tokio-expose-its-runtime-but-async-std-doesnt/65676",
+    "title": "Why does tokio expose its runtime but async-std doesn't? - help - The Rust Programming Language Forum",
+    "snippets": [
+     "# Why does tokio expose its runtime but async-std doesn't?\nWell, async-std has decided that they want only a single global runtime, so they can just put everything in globals.",
+     "The two projects do differ in terms of their focus: tokio was built from the beginning as a solid, universal, capable engine for asynchronous execution (focused quite a bit on the networking side of the equation) - while async_std came later to focus on the async alternatives to the std library, first and foremost. The headers of the two projects reflect just that:\n\n**Tokio**: A runtime for writing reliable network applications without compromising speed.\n\n**Async-Std**: Async version of the Rust standard library.",
+     "Lastly, if by \"the approach\" of async-std you mean the fact that it has a separate function to do exactly what tokio requires you to do to start executing the first future you pass into it, albeit in a bit more explicit manner, then the *strict* answer would be \"yes\", as calling an additional function to do an additional job for you by definition provides some overhead - but it's definitely not something to worry about if the only thing you're doing in either case is just passing your async alternative of the main() into the runtime",
+     "```rust\n    let mut gens = vec![];\n    for _ in 0..10 {\n        gens.push(Gen::new());\n    }\n```\n\nWith tokio the generators run on different executors and with async-std they run on the same one. Or at least it seems like as if that was the case.\n\nSo I guess I simply noticed this difference and started to wonder what are the pros and cons of having the runtime in a global vs exposing it directly to the users.",
+     "No. Wrong - again, your create a bunch of executors in either case. With async-std you simply drop them as soon as your task returns, discarding the async thread inside. With tokio, you manage to save them, but now you've got 10 different execution contexts doing the same kind of work for nothing.",
+     "Neither function is synchronous in nature, so you don't have to call them in async context - but in case of async_std, you have a global static runtime, initialized on demand, which will get picked up for the spawn-ed task, while in case of tokio, it expects you to provide a runtime for it to work in, so without the block_on, you won't get anywhere.",
+     "Since async-std's runtime is global, effectively - yes, all the tasks you spawn with it will get executed by just one runtime. For tokio, you'll need to initialize it separately - or put it in a static variable as well (explicitly, no magic), and refer to it in your code on demand.",
+     "```rust\n// By contrast, here is the same thing using async-std:\n\nimpl Gen {\n    fn new() -> Gen {\n        let r = block_on(gen());\n        Gen { r }\n    }\n}\n```\n\nThe runtime does not have to be stored, in fact, I've never had a reference to it. By the way, when async-std is used s.send(i).await.unwrap(); almost always panics but I haven't seen the tokio implementation panic, which suggests that async-std 's runtime is shut down after r is dropped."
+    ]
+   },
+   {
+    "url": "https://lucaberton.com/blog/rust-async-runtimes-tokio-2026/",
+    "title": "Rust Async Runtime Deep Dive: Tokio vs async-std vs smol",
+    "snippets": [
+     "# Rust Async Runtime Deep Dive: Tokio vs async-std vs smol\n## The Runtime Landscape\n| Runtime | Use Case | Worker Threads | IO Model |\n| --- | --- | --- | --- |\n| Tokio | General purpose, networking | Multi-threaded work-stealing | epoll/kqueue/IOCP |\n| async-std | Simpler API, mirrors std | Multi-threaded | epoll/kqueue |",
+     "## async-std: The Simpler Alternative\n### Why async-std?\n- API mirrors std \u2014 lower learning curve\n- No macro magic (#\\[tokio::main\\] vs explicit block\\_on)\n- Adequate for simpler services\n- Smaller dependency tree",
+     "### Why NOT async-std?\n- Smaller ecosystem (many crates are Tokio-only)\n- Less active development in 2026\n- Performance gap in high-throughput scenarios",
+     "## Performance Comparison\n| Runtime | Requests/sec | P50 Latency | P99 Latency | Memory |\n| --- | --- | --- | --- | --- |\n| Tokio | 1.2M | 0.8ms | 4.2ms | 85MB |\n| async-std | 900K | 1.1ms | 6.8ms | 92MB |",
+     "## My Recommendation\n1. **Start with Tokio** \u2014 ecosystem compatibility alone justifies it\n\n4. **Avoid async-std** \u2014 for new projects in 2026, the ecosystem has moved to Tokio"
+    ]
+   },
+   {
+    "url": "https://medium.com/rustaceans/choosing-your-async-champion-tokio-vs-async-std-in-2025-a142d3899b66",
+    "title": "Choosing Your Async Champion: Tokio vs. async-std in 2025",
+    "snippets": [
+     "# Choosing Your Async Champion: Tokio vs. async-std in 2025\nBut for newcomers and even seasoned Rustaceans, a crucial question often arises: Which async runtime should I choose? The two dominant players in this arena are **Tokio** and **async-std**. Both are robust, mature, and widely used, but they embody different philosophies and excel in different scenarios."
+    ]
+   },
+   {
+    "url": "https://rust-lang.github.io/async-book/08_ecosystem/00_chapter.html",
+    "title": "The Async Ecosystem - Asynchronous Programming in Rust",
+    "snippets": [
+     "# The Async Ecosystem\n## Community-Provided Async Crates\n### Popular Async Runtimes\n- Tokio: A popular async ecosystem with HTTP, gRPC, and tracing frameworks.\n- async-std: A crate that provides asynchronous counterparts to standard library components.",
+     "## Determining Ecosystem Compatibility\nNotably, Tokio uses the mio reactor and defines its own versions of async I/O traits, including AsyncRead and AsyncWrite. On its own, it\u2019s not compatible with async-std and smol, which rely on the async-executor crate, and the AsyncRead and AsyncWrite traits defined in futures."
+    ]
+   },
+   {
+    "url": "https://www.rustfaq.org/en/what-is-the-difference-between-tokio-and-async-std/",
+    "title": "\ud83d\ude80 Tokio vs Async-std: Which Runtime Wins?",
+    "snippets": [
+     "# What is the difference between tokio and async-std\nTokio is a multi-threaded runtime for high performance, while async-std is a single-threaded runtime mimicking the standard library.",
+     "## Minimal examples\nThe community convention is to pick one runtime per binary and stick to its types. Mixing tokio::net::TcpListener inside an async-std runtime causes silent failures. The future will never complete because the runtime does not know how to poll tokio's internal state.",
+     "## How the machinery differs\nWhen you poll a future, you pass a Context containing the waker. If a tokio future receives an async-std waker, it cannot register itself with the tokio scheduler. The future gets stuck.",
+     "## Pitfalls and compiler errors\nThe biggest pitfall is mixing runtimes. The compiler will not stop you from using tokio types inside an async-std function.",
+     "## Decision matrix\nUse tokio when you are building a production service, web server, or network tool where ecosystem maturity matters. Most async crates depend on tokio, so choosing it avoids runtime conflicts. Use tokio when you need high-performance multi-threaded scheduling out of the box. The work-stealing scheduler handles CPU-bound bursts and I/O waits efficiently without manual tuning. Use tokio when you want access to a rich set of macros and primitives.",
+     "Use async-std when you are writing a script, CLI tool, or educational project where familiarity with std is more important than raw throughput. The API mirrors the standard library, so you can swap std::fs for async-std::fs and keep the same mental model. Use async-std when you prefer a runtime that defaults to a single-threaded event loop.",
+     "Use async-std when you are building a library that wants to remain runtime-agnostic but needs a default for examples.",
+     "## Where to go next\nThink of Tokio as a large, busy restaurant with many waiters (threads) handling many tables at once, making it fast for heavy traffic. Async-std is like a single waiter who is very efficient but can only handle one thing at a time. You choose Tokio for big, fast applications and async-std for smaller, simpler tools."
+    ]
+   },
+   {
+    "url": "https://blog.logrocket.com/asynchronous-i-o-and-async-await-packages-in-rust/",
+    "title": "Asynchronous I/O and async/await packages in Rust - LogRocket Blog",
+    "snippets": [
+     "# Asynchronous I/O and async/await packages in Rust\n## 1. Tokio\n```\n[dependencies]\ntokio = { version = \"0.3\", features = [\"full\"] }\n```\n\nNow you can spawn a Tokio runtime and give it a future to run.\n\n```\nfn main() {\n    tokio::runtime::Runtime::new().unwrap().block_on(async {\n        println!(\"Hello world\");\n    })\n}\n```",
+     "## 2. async-std\nLike the name suggests, async-std attempts to be an asynchronous version of the Rust standard library. It has similar goals as Tokio, which is its main competitor, but is less popular and therefore less battle-tested in the wild.",
+     "The most important thing to know is that Tokio and async-std are not 100 percent compatible. Libraries built on top of one might not work in the runtime of the other.",
+     "If stability is a top priority, I would recommend Tokio over async-std because it\u2019s simply more mature and has more libraries built on top of it. For anyone exploring Rust async, it\u2019s still a good idea to try out async-std.",
+     "## Conclusion\nIn my opinion, async Rust is in a great place despite some concerns around runtime compatibility. Tokio and async-std are both general-purpose async runtimes that provide async alternatives to standard library types."
+    ]
+   },
+   {
+    "url": "https://dasroot.net/posts/2025/12/rust-async-programming-tokio-async-std-patterns/",
+    "title": "Rust Async Programming: Tokio, async-std, and Patterns \u00b7 Technical news about AI, coding and all",
+    "snippets": [
+     "# Rust Async Programming: Tokio, async-std, and Patterns\n## Understanding Async Rust Fundamentals #\nThe most common runtimes in Rust are **tokio** and **async-std**. As of 2025, **tokio** is the most widely used runtime due to its robustness and feature-rich API. tokio uses an event loop and a thread pool to execute asynchronous tasks efficiently. When a future is awaited, the runtime yields control back to the event loop, allowing other tasks to run.",
+     "## async-std: A Modern Alternative #\n| Feature | async-std | Tokio |\n| --- | --- | --- |\n| Runtime model | Single-threaded with thread pool | Multi-threaded with task scheduler |\n| Zero-cost abstractions | Yes, via futures and async/await | Yes, but with additional overhead from futures-0.3 |\n| Standard library integration | Full async I/O support with std::fs, std::net | Partial, with async wrappers for std::fs, std::net |\n| Performance (ops/sec, 2025 benchmarks) | \\~250k I/O-bound operations | \\~200k I/O-bound operations |\n| CPU usage (idle) | \\~1.2% | \\~2.1% |\n| Memory footprint (MB) | \\~30 | \\~50 |\n| Complexity (async code) | Lower, with minimal boilerplate | Higher, due to more complex task scheduling |\n| Use case | I/O-bound microservices | High-throughput, latency-sensitive systems |\n| Last stable version (2025) | 1.10.0 (discontinued, 2025-08-24) | 1.26.0 (active, 2025-08-30) |",
+     "### When to Use Tokio #\n- **When targeting environments with limited memory (e.g., embedded systems)**, Tokio provides more fine-grained control over resource allocation. This is crucial for systems where memory usage must be tightly managed.\n- **For production systems that require long-term support and active maintenance**, Tokio is the recommended choice due to async-std being officially discontinued as of 2025-08-24.",
+     "### Decision Factors #\n- **Consider runtime stability and long-term maintenance.** Tokio is actively maintained and supported, while async-std is no longer updated.\n- **Evaluate the need for full standard library compatibility.** async-std provides deeper integration with the standard library, whereas Tokio requires wrappers for async I/O.\n- **Assess whether your workload is I/O-bound or CPU-bound.** async-std is better suited for I/O-bound applications, while Tokio is more effective for CPU-bound tasks.",
+     "- **Weigh the trade-offs between minimal runtime complexity and scalability.** async-std offers a simpler model, while Tokio provides more advanced features and greater scalability.",
+     "## Choosing the Right Runtime for Your Project #\n### Practice Name: Benchmark Performance for Specific Workloads #\n**Why**: Performance can vary greatly based on workload. async-std 2.0.0 benchmarks from 2025 show that Tokio is more efficient in workloads involving high concurrency and I/O. Choosing based solely on abstraction or syntax can lead to suboptimal performance in production.",
+     "## Conclusion #\nTokio 1.48.0\u2019s reactor-based model and work-stealing scheduler deliver efficient concurrency for high-throughput applications, while async-std achieves ~250k I/O operations per second with better idle CPU efficiency. Use async-std for I/O-heavy tasks requiring standard library integration and Tokio for broader crate compatibility and advanced runtime features."
+    ]
+   },
+   {
+    "url": "https://developers-heaven.net/blog/the-async-ecosystem-tokio-vs-async-std/",
+    "title": "The Async Ecosystem: Tokio vs. async-std - Developers Heaven",
+    "snippets": [
+     "# The Async Ecosystem: Tokio vs. async-std \u2013 Choosing Your Async Runtime\n## Executive Summary\nTokio, known for its focus on performance and fine-grained control, caters to demanding use cases. async-std, on the other hand, prioritizes simplicity and ease of use, offering a more standard library-like experience.",
+     "## Runtime Architecture \ud83c\udfd7\ufe0f\n- **Tokio:** Employs a multi-threaded, work-stealing scheduler for optimal concurrency. It also provides a reactor for handling I/O events efficiently.\n- **async-std:** Offers a single-threaded scheduler with the option to use a thread pool for CPU-bound tasks. Its focus is on simplicity and ease of integration.",
+     "## Error Handling Strategies \ud83d\udc1e\n- **Tokio:** Encourages the use of the Result type for explicitly propagating errors. It provides utilities for working with errors in asynchronous contexts.\n- **async-std:** Leverages Rust\u2019s standard error handling mechanisms, promoting a more familiar and consistent approach.",
+     "## Performance Benchmarks \ud83d\udcc8\n- **Throughput:** Both runtimes can achieve high throughput, but Tokio often edges out async-std in demanding scenarios.\n- **Memory Usage:** Tokio might consume slightly more memory due to its multi-threaded nature.",
+     "## Ease of Use and Learning Curve \ud83d\udcda\n- **Tokio:** Offers a more complex API with a steeper learning curve. Its fine-grained control comes at the cost of increased complexity.\n- **async-std:** Prioritizes simplicity and ease of use, providing a more intuitive API that aligns closely with Rust\u2019s standard library.",
+     "## FAQ \u2753\n### What are the key differences between Tokio and async-std?\nTokio is a multi-threaded runtime focused on high performance and fine-grained control, suitable for demanding applications like network servers. async-std, conversely, is designed for simplicity and ease of use, making it ideal for simpler applications or developers new to async Rust. async-std\u2019s API is also more similar to Rust\u2019s standard library.",
+     "### When should I choose Tokio over async-std, and vice versa?\nChoose Tokio when performance is paramount and you require fine-grained control over the runtime\u2019s behavior, such as in high-traffic network applications. Opt for async-std if you prioritize simplicity, ease of use, and a more standard library-like experience, making it suitable for smaller projects or when getting started with async Rust.",
+     "## Conclusion \u2728\nChoosing between Tokio and async-std ultimately depends on the specific needs of your project. Tokio excels in performance-critical scenarios requiring fine-grained control. async-std shines in its simplicity and ease of use, making it an excellent choice for smaller projects and newcomers to asynchronous Rust."
+    ]
+   },
+   {
+    "url": "https://www.reddit.com/r/rust/comments/dngig6/tokio_vs_asyncstd/",
+    "title": "r/rust on Reddit: tokio vs async-std ?",
+    "snippets": [
+     "# tokio vs async-std ?\n## carllerche\nThe next release of Tokio aims to mirror Rust std, but async...  Obviously, sync and async are pretty different and Tokio 0.2 will adapt its APIs to reflect this.",
+     "## WellMakeItSomehow\n`tokio` is older and more used, so it caters first to the needs of its users (including other open-source crates). The developers are working on a port to `std` futures and `await`, but it's going to be released \"when it's done\", not necessarily on Nov 7.",
+     "`async-std` is more of a clean-slate implementation, by mostly different people -- although at least one of the developers has also contributed to `tokio`. Because of its unusual versioning scheme, I suspect `async-std` wants to hit `1.0` when 1.39 is out, so if you want to avoid using an `-alpha` version of `tokio`, you should go with `async-std`.",
+     "Other than that, both projects probably want the same things. `tokio` might move a bit slower because the API changes need to be validated by other projects that build on it like `tonic` and `hyper` (but this is not really a bad thing). `async-std` also has some production users, but I think they're more proprietary, or at least I haven't seen any large project using it.",
+     "\n## matthunz\n\nAFAIK async-std uses a really minimal but less efficient scheduler than tokio. It seems like a good way to get into async programming but tokio should be faster with it's less allocations. It also comes with more networking related abstractions",
+     "## matthunz\n### oleid\n\n### oleid \u203a matthunz\n\nIt could change but async-std uses tokio's old implementation with crossbeam-deque, which tokio just switched from for performance reasons",
+     "### yoshuawuyts1\nAsync-std has always had a single allocation per task. My understanding is that the next alpha version of Tokio will also have a single allocation per task, but currently doesn't have a release published with this yet.\n\n Though I'm certain it's possible to engineer benchmarks to make either runtime look better, in practice performance between async-std and Tokio should be mostly comparable."
+    ]
+   },
+   {
+    "url": "https://www.slingacademy.com/article/runtime-models-comparing-async-std-and-tokio-in-rust/",
+    "title": "Runtime Models: Comparing Async-std and tokio in Rust - Sling Academy",
+    "snippets": [
+     "# Runtime Models: Comparing Async-std and tokio in Rust\n## Introduction to Tokio\ntokio is perhaps the most popular choice for asynchronous programming in Rust, offering a comprehensive runtime designed for highly concurrent network applications.",
+     "## Key Differences between Async-std and Tokio\n- **Threading:** tokio provides both a single-threaded and multi-threaded runtime, allowing for more customization depending on your workload. async-std, on the other hand, primarily operates with a multi-threaded executor.\n- **Feature Completeness:** tokio generally offers more out-of-the-box features and libraries, such as websocket and UDP support, making it scalable for larger, more complex applications.",
+     "- **Ease of Use:** async-std aligns closely with Rust\u2019s standard library, making it a more intuitive experience for developers familiar with Rust's conventions.\n- **Library Ecosystem:** The tokio library ecosystem is more mature and widespread due to its longer presence in the Rust landscape.",
+     "## Choosing the Right Library\nYour choice between async-std and tokio will largely depend on your project requirements and personal preference. If you need extensive libraries and flexibility in setup, tokio might be the better choice. If your project prioritizes simplicity and uses async features similar to Rust\u2019s standard library, async-std could be more suitable."
+    ]
+   },
+   {
+    "url": "https://www.rustfaq.org/en/how-to-use-async-std-as-an-alternative-to-tokio/",
+    "title": "How to Use async-std as an Alternative to Tokio \u2014 Rust FAQ",
+    "snippets": [
+     "# How to Use async-std as an Alternative to Tokio\n## When the standard library feels out of reach\nIt works, but you notice a pattern. Every file operation requires tokio::fs. Every network socket needs tokio::net. Every sleep call pulls in tokio::time.  You want to write File::open and have it just work. You want the API to look like the standard library, even though the code runs asynchronously.",
+     "## The philosophy of familiarity\nasync-std takes a different approach than tokio. tokio builds a complete async ecosystem with its own types and modules. You opt into async by importing tokio::fs instead of std::fs. async-std mirrors the standard library's structure. It provides async_std::fs, async_std::net, and async_std::io that closely resemble their std counterparts.",
+     "This design choice matters for migration and learning. If you are porting sync code to async, async-std often requires fewer import changes. If you are teaching async Rust, async-std lets students focus on await and futures without memorizing runtime-specific module paths. The trade-off is ecosystem breadth. tokio has more third-party support because it reached critical mass first. async-std covers the standard library well, but some niche crates only target tokio.",
+     "## Decision: when to use async-std\nUse async-std when you want an API that mirrors the standard library and you value familiarity over ecosystem breadth. Use async-std when you are porting sync code to async and want minimal import changes. Use async-std when you are teaching async Rust and want students to focus on futures rather than runtime-specific types.",
+     "Use tokio when you need the largest ecosystem of async crates, since most third-party libraries target tokio first. Use tokio when you are building high-performance network services where the runtime's optimization and multi-threaded work-stealing scheduler matter more than API shape. Use tokio when you depend on crates that only support tokio, such as certain database drivers or streaming frameworks.",
+     "## Where to go next\nasync-std is a different engine that runs your asynchronous code, similar to how you might choose between a diesel or electric motor for a car. You use it when you prefer its specific design or need to avoid dependencies on Tokio."
+    ]
+   },
+   {
+    "url": "https://www.reddit.com/r/rust/comments/sl37re/rust_exploring_the_tokio_vs_asyncstd_performance_2/",
+    "title": "r/rust on Reddit: Rust: Exploring the Tokio vs async-std performance #2",
+    "snippets": [
+     "# Rust: Exploring the Tokio vs async-std performance #2\n## Darksonn\nSince this is comparing Tokio and async-std `spawn_blocking` performance, it is probably worth pointing out that Tokio and async-std implement these in nearly the exact same way.",
+     "## kono_throwaway_da\n### ssokolow\nTokio exposes an API modelled after previous versions of Tokio, while async-std exposes an API modelled after `std`.",
+     "It's possible you might be able to unify some of their core components but, fundamentally, they exist because Tokio is now maintaining backwards compatibility with an overall API design laid out prior to the availability of `async` and `await` while async-std is trying to expose an API that's \"`std`, but `async`\"...",
+     "**CORRECTION:** My understanding is that async-std was intended to weight matching `std`'s APIs more strongly than Tokio, in the same way that `smol` places a higher emphasis on remaining small than Tokio. That's what I did a poor job of communicating.",
+     "### ssokolow \u203a carllerche\nThis is false. Tokio did not stabilize until after async/await landed. We also completely changed the api to line up with async/await. We also always tried to match std patterns since the beginning, when it makes sense. This was obviously hard in the 0.1 days but in 1.0 we match as possible."
+    ]
+   },
+   {
+    "url": "https://www.wyeworks.com/blog/2025/02/25/async-rust-when-to-use-it-when-to-avoid-it/",
+    "title": "Async Rust: When to Use It and When to Avoid It - WyeWorks Blog",
+    "snippets": [
+     "# Async Rust: When to Use It and When to Avoid It\n## Why Async? Understanding Its Role\n### Rust\u2019s Built-in Async Constructs\nIn short, while Rust\u2019s standard library lays the groundwork for async programming, a full runtime is necessary to execute asynchronous tasks effectively. Libraries like Tokio and async-std fill this gap, making async programming in Rust more accessible and practical.",
+     "## What Is an Asynchronous Runtime?\n### The Runtime\nThis is why Rust is often said to lack a full runtime, requiring a third-party library to fill that gap. In this case, we use Tokio as an example of a third-party library that serves as a full runtime for executing asynchronous Rust code.",
+     "## Why Async? Understanding Its Role\n### Rust\u2019s Built-in Async Constructs\nWhile it is technically possible to implement a custom reactor using only the standard library, this is complex and rarely practical for most applications. Instead, external async runtimes like Tokio and async-std provide both a custom executor and a reactor, offering a complete solution for efficient asynchronous programming in Rust.",
+     "## What Is an Asynchronous Runtime?\n### The Runtime\nThis leads us to the concept of a runtime, which is where Tokio comes in. Among several third-party libraries, Tokio provides a custom runtime for executing asynchronous Rust code. However, Tokio is more than just a runtime\u2014it describes itself as a platform.\n\nTokio is an event-driven, non-blocking I/O platform for writing asynchronous applications with the Rust programming language.",
+     "The Tokio runtime is simply additional software\u2014built on top of Rust\u2014that manages the execution of your program and assists in dividing it into pausable tasks."
+    ]
+   }
+  ]
+ },
+ "sources": {
+  "https://www.reddit.com/r/rust/comments/y7r9dg/what_is_the_difference_between_tokio_and_asyncstd/": {
+   "title": "r/rust on Reddit: What is the difference between tokio and async-std?",
+   "hostname": "www.reddit.com",
+   "age": [
+    "Wednesday, October 19, 2022",
+    "2022-10-19",
+    "1439 days ago",
+    "2022-10-19T03:13:28Z"
+   ]
+  },
+  "https://corrode.dev/blog/async/": {
+   "title": "The State of Async Rust: Runtimes",
+   "hostname": "corrode.dev",
+   "age": [
+    "Thursday, July 30, 2026",
+    "2026-07-30",
+    "59 days ago",
+    "2026-07-30T00:00:00Z"
+   ]
+  },
+  "https://medium.com/@AlexanderObregon/async-programming-in-rust-exploring-tokio-and-async-std-97d4b524cef0": {
+   "title": "Async Programming in Rust \u2014 Exploring Tokio and Async-std",
+   "hostname": "medium.com",
+   "age": [
+    "Friday, April 26, 2024",
+    "2024-04-26",
+    "883 days ago",
+    "2024-04-26T23:10:55Z"
+   ]
+  },
+  "https://rustify.rs/articles/rust-async-runtimes-tokio-vs-async-std-2026": {
+   "title": "Rust Async Runtimes: Tokio vs async-std vs smol 2026",
+   "hostname": "rustify.rs",
+   "age": [
+    "Wednesday, August 19, 2026",
+    "2026-08-19",
+    "39 days ago",
+    "2026-08-19T00:00:00Z"
+   ]
+  },
+  "https://users.rust-lang.org/t/tokio-async-std-compatibility/102617": {
+   "title": "Tokio & async_std compatibility - help - The Rust Programming Language Forum",
+   "hostname": "users.rust-lang.org",
+   "age": [
+    "Wednesday, November 15, 2023",
+    "2023-11-15",
+    "1047 days ago",
+    "2023-11-15T18:18:04Z"
+   ]
+  },
+  "https://users.rust-lang.org/t/why-does-tokio-expose-its-runtime-but-async-std-doesnt/65676": {
+   "title": "Why does tokio expose its runtime but async-std doesn't? - help - The Rust Programming Language Forum",
+   "hostname": "users.rust-lang.org",
+   "age": [
+    "Friday, October 08, 2021",
+    "2021-10-08",
+    "1814 days ago",
+    "2021-10-08T20:52:38Z"
+   ]
+  },
+  "https://lucaberton.com/blog/rust-async-runtimes-tokio-2026/": {
+   "title": "Rust Async Runtime Deep Dive: Tokio vs async-std vs smol",
+   "hostname": "lucaberton.com",
+   "age": [
+    "Wednesday, July 01, 2026",
+    "2026-07-01",
+    "88 days ago",
+    "2026-07-01T00:00:00Z"
+   ]
+  },
+  "https://medium.com/rustaceans/choosing-your-async-champion-tokio-vs-async-std-in-2025-a142d3899b66": {
+   "title": "Choosing Your Async Champion: Tokio vs. async-std in 2025",
+   "hostname": "medium.com",
+   "age": [
+    "Monday, July 07, 2025",
+    "2025-07-07",
+    "447 days ago",
+    "2025-07-07T12:58:46Z"
+   ]
+  },
+  "https://rust-lang.github.io/async-book/08_ecosystem/00_chapter.html": {
+   "title": "The Async Ecosystem - Asynchronous Programming in Rust",
+   "hostname": "rust-lang.github.io",
+   "age": [
+    "Wednesday, October 30, 2019",
+    "2019-10-30",
+    "2524 days ago",
+    "2019-10-30T00:00:00Z"
+   ]
+  },
+  "https://www.rustfaq.org/en/what-is-the-difference-between-tokio-and-async-std/": {
+   "title": "\ud83d\ude80 Tokio vs Async-std: Which Runtime Wins?",
+   "hostname": "www.rustfaq.org",
+   "age": [
+    "Friday, April 17, 2026",
+    "2026-04-17",
+    "163 days ago",
+    "2026-04-17T00:00:00Z"
+   ]
+  },
+  "https://blog.logrocket.com/asynchronous-i-o-and-async-await-packages-in-rust/": {
+   "title": "Asynchronous I/O and async/await packages in Rust - LogRocket Blog",
+   "hostname": "blog.logrocket.com",
+   "age": [
+    "Tuesday, June 04, 2024",
+    "2024-06-04",
+    "844 days ago",
+    "2024-06-04T21:24:46Z"
+   ]
+  },
+  "https://dasroot.net/posts/2025/12/rust-async-programming-tokio-async-std-patterns/": {
+   "title": "Rust Async Programming: Tokio, async-std, and Patterns \u00b7 Technical news about AI, coding and all",
+   "hostname": "dasroot.net",
+   "age": [
+    "Sunday, February 08, 2026",
+    "2026-02-08",
+    "231 days ago",
+    "2026-02-08T11:38:25Z"
+   ]
+  },
+  "https://developers-heaven.net/blog/the-async-ecosystem-tokio-vs-async-std/": {
+   "title": "The Async Ecosystem: Tokio vs. async-std - Developers Heaven",
+   "hostname": "developers-heaven.net",
+   "age": [
+    "Sunday, August 10, 2025",
+    "2025-08-10",
+    "413 days ago",
+    "2025-08-10T02:29:44Z"
+   ]
+  },
+  "https://www.reddit.com/r/rust/comments/dngig6/tokio_vs_asyncstd/": {
+   "title": "r/rust on Reddit: tokio vs async-std ?",
+   "hostname": "www.reddit.com",
+   "age": [
+    "Saturday, October 26, 2019",
+    "2019-10-26",
+    "2528 days ago",
+    "2019-10-26T16:58:04Z"
+   ]
+  },
+  "https://www.slingacademy.com/article/runtime-models-comparing-async-std-and-tokio-in-rust/": {
+   "title": "Runtime Models: Comparing Async-std and tokio in Rust - Sling Academy",
+   "hostname": "www.slingacademy.com",
+   "age": [
+    "Monday, January 06, 2025",
+    "2025-01-06",
+    "629 days ago",
+    "2025-01-06T00:00:00Z"
+   ]
+  },
+  "https://www.rustfaq.org/en/how-to-use-async-std-as-an-alternative-to-tokio/": {
+   "title": "How to Use async-std as an Alternative to Tokio \u2014 Rust FAQ",
+   "hostname": "www.rustfaq.org",
+   "age": []
+  },
+  "https://www.reddit.com/r/rust/comments/sl37re/rust_exploring_the_tokio_vs_asyncstd_performance_2/": {
+   "title": "r/rust on Reddit: Rust: Exploring the Tokio vs async-std performance #2",
+   "hostname": "www.reddit.com",
+   "age": [
+    "Saturday, February 05, 2022",
+    "2022-02-05",
+    "1695 days ago",
+    "2022-02-05T09:40:27Z"
+   ]
+  },
+  "https://www.wyeworks.com/blog/2025/02/25/async-rust-when-to-use-it-when-to-avoid-it/": {
+   "title": "Async Rust: When to Use It and When to Avoid It - WyeWorks Blog",
+   "hostname": "www.wyeworks.com",
+   "age": [
+    "Tuesday, February 25, 2025",
+    "2025-02-25",
+    "579 days ago",
+    "2025-02-25T00:00:00Z"
+   ]
+  }
+ }
+}

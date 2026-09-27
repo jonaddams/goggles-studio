@@ -1,8 +1,10 @@
 # Goggles Studio
 
-A workbench for authoring [Brave Search Goggles](https://brave.com/goggles). Write a
-Goggle, run it against a live query, and see exactly what it did to the ranking —
-including the part that is easy to miss: what it broke.
+A workbench for authoring [Brave Search Goggles](https://brave.com/goggles), in two
+views of the same question: **what did this Goggle replace?**
+
+- **Ranking diff** — what it did to the results page
+- **Grounding bake-off** — what it did to the sources an LLM gets grounded on
 
 **Live: [goggles-studio.jonaddams.workers.dev](https://goggles-studio.jonaddams.workers.dev)**
 
@@ -76,17 +78,49 @@ A bare `$boost=2` on one domain was enough to hand it 80% of a page.
 
 That is not obvious from the syntax, where all three read like symmetric knobs.
 
+## Grounding bake-off
+
+![The same question grounded through llm/context under three different Goggles](docs/bakeoff.png)
+
+The second tab runs one question through `llm/context` under several Goggles and
+compares the grounding sets. Two results, both from the live API:
+
+**A Goggle does not make grounding cheaper — it changes who fills the budget.** The
+same question returned ~8,000 estimated tokens with no Goggle, with a docs-only
+Goggle, and with a spam-filtering one. What changed was composition: the docs-only
+Goggle shared **zero of 18 sources** with the baseline and collapsed host diversity
+from 13 to 2, while a targeted `$discard` kept 15 of 19.
+
+**Authority is not freshness, and only one of them is visible without measuring.**
+
+| Goggle | Hosts | ~Tokens | Median source age | Shared with baseline |
+|---|---|---|---|---|
+| none | 13 | 8,030 | 630 days | — |
+| docs only | 2 | 7,929 | **2,476 days** | 0/20 |
+| no content mills | 12 | 7,985 | 951 days | 15/19 |
+
+Boosting `doc.rust-lang.org`, `docs.rs` and `tokio.rs` for a question about *tokio vs
+async-std* produced grounding with a median age of nearly seven years — four times
+staler than the ungoggled baseline, for the same token volume. Among what it pulled in:
+`tokio.rs/blog/2019-08-alphas` and `docs.rs/google-oauth`. The sources look more
+authoritative and are substantially worse for the question.
+
+This is the same failure the ranking tab detects, one layer down: `$boost` promotes a
+whole host, so it reaches past the pages you wanted into everything else that host
+publishes.
+
 ## Design
 
 ```
 src/lib/diff.ts       pure ranking diff — no network, no DOM, fully unit tested
+src/lib/grounding.ts  pure grounding-set metrics; shares hostOf with diff.ts
 src/lib/brave.ts      Brave API client; GET, switching to POST for long Goggles
 src/server/app.ts     the Hono API, with storage and guards injected
 src/server/ports.ts   interfaces the two runtimes implement differently
 src/server/budget.ts  soft daily cap on API spend
 src/server/index.ts   Node entrypoint  — in-memory cache, no guards
 src/worker.ts         Worker entrypoint — Cache API, rate limit, budget, SPA
-src/ui/               React studio
+src/ui/               React studio, two tabs
 ```
 
 The API is a factory taking its dependencies as arguments, so the same routes run
@@ -111,7 +145,7 @@ back to back.
 20-result Brave payloads, so the classifier is verified against live data shapes
 without spending calls on every test run.
 
-## Two things learned from the live API
+## Three things learned from the live API
 
 **1. `mutated_by_goggles` is not a reliable "did my Goggle fire" signal.** It is
 reported per result cluster, and in practice appears on `videos` but not on `web`. A
@@ -119,7 +153,14 @@ goggled web response and an ungoggled one were indistinguishable by that flag �
 reported `{"videos": false}`. The studio surfaces whatever Brave returns, then computes
 the real diff locally.
 
-**2. Both GET and POST accept Goggles, with different shapes.** GET takes the Goggle as
+**2. `max_tokens` did not bound the grounding returned by `llm/context`.** Sending
+`max_tokens=2048`, `max_tokens=16384`, and omitting it entirely all produced roughly
+8,030 estimated tokens from 18 sources for the same query, on both GET and POST.
+`count` is what governs volume. Token counts here are estimated from snippet length,
+but a 8x difference in the requested cap producing identical output is hard to explain
+as estimation error.
+
+**3. Both GET and POST accept Goggles, with different shapes.** GET takes the Goggle as
 a single url-encoded newline-separated string; POST takes `goggles` as a JSON array.
 The client uses GET and switches to POST past ~1500 characters, since a large Goggle
 otherwise risks request-URL length limits.
@@ -179,14 +220,16 @@ accounting.
 ## Tests
 
 ```bash
-npm test          # 25 tests
+npm test          # 37 tests
 npm run build     # typecheck + production build
-npm run shot      # regenerate docs/screenshot.png (needs `npm run dev` running)
+npm run shot      # regenerate both screenshots (needs `npm run dev` running)
 ```
 
 The diff engine is covered for rank deltas, discards, the `pushedOut`/`dropped`
 distinction, host concentration, and empty-result edge cases; the cache, throttle and
-daily budget are tested with an injected clock. `npm run shot` doubles as a smoke test — it fails on
+daily budget are tested with an injected clock. The grounding metrics are covered for
+source overlap, host concentration, snippet density, median freshness and empty
+contexts, against recorded `llm/context` responses. `npm run shot` doubles as a smoke test — it fails on
 any console error.
 
 ## Next
@@ -194,5 +237,5 @@ any console error.
 - Save a query set and score a Goggle across all of it, not one query at a time
 - Diff two Goggles against each other, not just against the baseline
 - Generate a starting Goggle from a plain-English description of the intent
-- Apply the same diff to the `llm/context` endpoint, where the Goggle decides what
-  grounds an LLM answer
+- Score grounding freshness against the question's own volatility — a stale source is
+  only a problem for a question whose answer moved

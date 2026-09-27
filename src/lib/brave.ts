@@ -82,3 +82,50 @@ export async function search(
     raw,
   }
 }
+
+const CONTEXT_ENDPOINT = 'https://api.search.brave.com/res/v1/llm/context'
+
+export interface ContextParams {
+  query: string
+  goggle?: string
+  count?: number
+}
+
+/**
+ * Fetches pre-extracted page content for grounding an LLM.
+ *
+ * Note: `max_tokens` is deliberately not sent. Setting it to 2048 or 16384, on
+ * either GET or POST, produced the same volume of grounding as omitting it —
+ * `count` is what governs how much comes back. See the README.
+ */
+export async function context(
+  { query, goggle, count = 20 }: ContextParams,
+  apiKey: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<unknown> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Accept-Encoding': 'gzip',
+    'X-Subscription-Token': apiKey,
+  }
+  const trimmed = goggle?.trim()
+  const usePost = (trimmed?.length ?? 0) > GET_GOGGLE_LIMIT
+
+  const res = usePost
+    ? await fetchImpl(CONTEXT_ENDPOINT, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: query, count, ...(trimmed ? { goggles: [trimmed] } : {}) }),
+      })
+    : await fetchImpl(
+        `${CONTEXT_ENDPOINT}?${new URLSearchParams({
+          q: query,
+          count: String(count),
+          ...(trimmed ? { goggles: trimmed } : {}),
+        })}`,
+        { headers },
+      )
+
+  if (!res.ok) throw new BraveApiError(res.status, await res.text())
+  return res.json()
+}

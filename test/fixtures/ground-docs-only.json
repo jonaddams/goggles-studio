@@ -1,0 +1,310 @@
+{
+ "grounding": {
+  "generic": [
+   {
+    "url": "https://docs.rs/async-std",
+    "title": "async_std - Rust",
+    "snippets": [
+     "# Crate async\\_std\u00a0Copy item path\n## \u00a7async-std has been discontinued; use smol instead\nWe created async-std to demonstrate the value of making a library as close to std as possible, but async. We think that demonstration was successful, and we hope it will influence future design and development directions of async in std. However, in the meantime, the smol project came about and provided a great executor and libraries for asynchronous use in the Rust ecosystem. We think that resources would be better spent consolidating around smol, rather than continuing to provide occasional maintenance of async-std.",
+     "As such, we recommend that all users of async-std, and all libraries built on async-std, switch to smol instead.",
+     "## \u00a7How to read this documentation\nRust\u2019s API documentation comes with the source code and you are encouraged to read it. The async-std source is generally high quality and a peek behind the curtains is often enlightening.\n\nModules in this crate are organized in the same way as in std, except blocking functions have been replaced with async functions and threads have been replaced with lightweight tasks.",
+     "## \u00a7Features\n```toml\n[dependencies.async-std]\nversion = \"1.7.0\"\nfeatures = [\"attributes\"]\n```\n\nCompatibility with the tokio 1.0 runtime is also simultaneously possible using the tokio1 Cargo feature:\n\n```toml\n[dependencies.async-std]\nversion = \"1.7.0\"\nfeatures = [\"tokio1\"]\n```",
+     "Compatibility with the tokio 0.2 runtime is possible using the tokio02 Cargo feature:\n\n```toml\n[dependencies.async-std]\nversion = \"1.7.0\"\nfeatures = [\"tokio02\"]\n```\n\nCompatibility with the tokio 0.3 runtime is also simultaneously possible using the tokio03 Cargo feature:"
+    ]
+   },
+   {
+    "url": "https://docs.rs/tokio-async-std/1.5.3/async_std/runtime/",
+    "title": "async_std::runtime - Rust",
+    "snippets": [
+     "# Module runtime\u00a0Copy item path\nAvailable on **crate feature std** only.\n\nThe Tokio runtime.\n\nUnlike other Rust programs, asynchronous applications require runtime support. In particular, the following runtime services are necessary:",
+     "Tokio\u2019s Runtime bundles all of these services as a single type, allowing them to be started, shut down, and configured together. However, most applications won\u2019t need to use Runtime directly. Instead, they can use the tokio::main attribute macro, which creates a Runtime under the hood.",
+     "## \u00a7Usage\nFrom within the context of the runtime, additional tasks are spawned using the tokio::spawn function. Futures spawned using this function will be executed on the same thread pool used by the Runtime.\n\nA Runtime instance can also be used directly.",
+     "```rust\nuse tokio::net::TcpListener;\nuse tokio::prelude::*;\nuse tokio::runtime::Runtime;\n\nfn main() -> Result<(), Box<dyn std::error::Error>> {\n    // Create the runtime\n    let mut rt = Runtime::new()?;\n\n    // Spawn the root task\n    rt.block_on(async {\n        let mut listener = TcpListener::bind(\"127.0.0.1:8080\").await?;\n\n        loop {\n            let (mut socket, _) = listener.accept().await?;\n\n            tokio::spawn(async move {\n                let mut buf = [0; 1024];\n\n                // In a loop, read data from the socket and write the data back.\n                loop {\n                    let n = match socket.read(&mut buf).await {\n                        // socket closed\n                        Ok(n) if n == 0 => return,\n                        Ok(n) => n,\n                        Err(e) => {\n                            println!(\"failed to read from socket; err = {:?}\", e);\n                            return;\n                        }\n                    };\n\n                    // Write the data back\n                    if let Err(e) = socket.write_all(&buf[0..n]).await {\n                        println!(\"failed to write to socket; err = {:?}\", e);\n                        return;\n                    }\n                }\n            });\n        }\n    })\n}\n```",
+     "## Structs\u00a7\n**Builder**: Builds Tokio Runtime with custom configuration values.\n**Handle**: Handle to the runtime.\n**Runtime**: The Tokio runtime.\n**TryCurrentError**: Error returned by try\\_current when no Runtime has been started"
+    ]
+   },
+   {
+    "url": "https://docs.rs/tokio-async-std/latest/async_std/runtime/struct.Runtime.html",
+    "title": "Runtime in async_std::runtime - Rust",
+    "snippets": [
+     "The Tokio runtime.\n\nSkip to main content\n\n## Runtime\n\nasync_std::runtime\n\n# Struct Runtime\u00a0Copy item path\n\nSource\n\n```rust\npub struct Runtime { /* private fields */ }\n```\n\nAvailable on **crate feature std** only.\n\nExpand description\n\nThe Tokio runtime.\n\nThe runtime provides an I/O driver, task scheduler, timer, and blocking pool, necessary for running asynchronous tasks.\n\nInstances of Runtime can be created using new or Builder. However, most users will use the #[tokio::main] annotation on their entry point instead.\n\nSee module level documentation for more details.",
+     "# Struct Runtime\u00a0Copy item path\n## Implementations\u00a7\n### impl Runtime\n#### pub fn spawn<F>(&self, future: F) -> JoinHandle<<F as Future>::Output> \u24d8\n##### \u00a7Examples\n```rust\nuse tokio::runtime::Runtime;\n\n// Create the runtime\nlet rt = Runtime::new().unwrap();\n\n// Spawn a future onto the runtime\nrt.spawn(async {\n    println!(\"now running on a worker thread\");\n});\n```",
+     "#### pub fn handle(&self) -> &Handle\n##### \u00a7Examples\n```rust\nuse tokio::runtime::Runtime;\n\nlet rt = Runtime::new()\n    .unwrap();\n\nlet handle = rt.handle();\n\nhandle.spawn(async { println!(\"hello\"); });\n```\n\nSource"
+    ]
+   },
+   {
+    "url": "https://tokio.rs/tokio/tutorial/async",
+    "title": "Async in depth",
+    "snippets": [
+     "# Executors\nAsynchronous Rust functions return futures. Futures must have poll called on them to advance their state. Futures are composed of other futures. So, the question is, what calls poll on the very most outer future?\n\nRecall from earlier, to run asynchronous functions, they must either be passed to tokio::spawn or be the main function annotated with #[tokio::main]. This results in submitting the generated outer future to the Tokio executor. The executor is responsible for calling Future::poll on the outer future, driving the asynchronous computation to completion.",
+     "# Summary\n- Asynchronous Rust operations are lazy and require a caller to poll them.\n- Wakers are passed to futures to link a future to the task calling it.\n- When a resource is **not** ready to complete an operation, Poll::Pending is returned and the task's waker is recorded.\n- When the resource becomes ready, the task's waker is notified.\n- The executor receives the notification and schedules the task to execute.\n- The task is polled again, this time the resource is ready and the task makes progress."
+    ]
+   },
+   {
+    "url": "https://docs.rs/tokio",
+    "title": "tokio - Rust",
+    "snippets": [
+     "# Crate tokio\u00a0Copy item path\n## Crate tokio\n\nA runtime for writing reliable network applications without compromising speed.\n\nTokio is an event-driven, non-blocking I/O platform for writing asynchronous applications with the Rust programming language. At a high level, it provides a few major components:",
+     "# Crate tokio\u00a0Copy item path\n- Tools for working with asynchronous tasks, including synchronization primitives and channels and timeouts, sleeps, and intervals.\n- APIs for performing asynchronous I/O, including TCP and UDP sockets, filesystem operations, and process and signal management.\n- A runtime for executing asynchronous code, including a task scheduler, an I/O driver backed by the operating system\u2019s event queue (epoll, kqueue, IOCP, etc\u2026), and a high performance timer.",
+     "## \u00a7A Tour of Tokio\n### \u00a7Working With Tasks\nFinally, Tokio provides a *runtime* for executing asynchronous tasks. Most applications can use the #[tokio::main] macro to run their code on the Tokio runtime. However, this macro provides only basic configuration options. As an alternative, the tokio::runtime module provides more powerful APIs for configuring and managing runtimes. You should use that module if the #[tokio::main] macro doesn\u2019t provide the functionality you need.",
+     "## Modules\u00a7\n**fs fs**: Asynchronous file utilities.\n**io**: Traits, helpers, and type definitions for asynchronous I/O functionality.\n**net**: TCP/UDP/Unix bindings for tokio.\n**process process**: An implementation of asynchronous process management for Tokio.\n**runtime rt**: The Tokio runtime.\n**signal signal**: Asynchronous signal handling for Tokio.",
+     "## Attribute Macros\u00a7\n**main macros and rt**: Marks async function to be executed by the selected runtime. This macro helps set up a Runtime without requiring the user to use Runtime or Builder directly.\n**test macros and rt**: Marks async function to be executed by runtime, suitable to test environment. This macro helps set up a Runtime without requiring the user to use Runtime or Builder directly."
+    ]
+   },
+   {
+    "url": "https://tokio.rs/blog/2019-08-alphas",
+    "title": "Tokio alpha release with async & await",
+    "snippets": [
+     "Tokio is a runtime for writing reliable asynchronous applications with Rust. It provides async I/O, networking, scheduling, timers, and more.",
+     "# Tokio alpha release with async & await\nAugust 08, 2019\n\nWe're pleased to announce the release of the first Tokio alpha with async & await support. This includes updating all of the Tokio crates to use std::future instead of futures 0.1. It also includes adding async fn versions of the APIs.\n\nGet it by adding:\n\n```toml\ntokio = \"=0.2.0-alpha.1\"\n```",
+     "```text\n#![feature(async_await)]\n\nuse tokio::net::TcpListener;\nuse tokio::prelude::*;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let addr = \"127.0.0.1:8080\".parse()?;\n    let mut listener = TcpListener::bind(&addr)?;\n\n    loop {\n        let (mut socket, _) = listener.accept().await?;\n\n        tokio::spawn(async move {\n            let mut buf = [0; 1024];\n\n            // In a loop, read data from the socket and write the data back.\n            loop {\n                let n = match socket.read(&mut buf).await {\n                    // socket closed\n                    Ok(n) if n == 0 => return,\n                    Ok(n) => n,\n                    Err(e) => {\n                        println!(\"failed to read from socket; err = {:?}\", e);\n                        return;\n                    }\n                };\n\n                // Write the data back\n                if let Err(e) = socket.write_all(&buf[0..n]).await {\n                    println!(\"failed to write to socket; err = {:?}\", e);\n                    return;\n                }\n            }\n        });\n    }\n}\n```\n\nMore examples are in the git repository.",
+     "# What we have now\nToday's release of Tokio 0.2.0-alpha.1 with async & await updates all of Tokio's components to use std::future, and all usage of futures 0.1 has been removed.\n\nChanges include:\n\n**Using async fns for asynchronous operations.**\n\nWhen possible, async fn has been used to provide asynchronous operations. For example, acceping sockets from a TcpListener is done with the async accept function:\n\n```text\nlet (mut socket, _) = listener.accept().await?;\n```",
+     "I/O operations are provided as async functions:\n\n```text\nlet n = socket.read(&mut buf).await?;\n\nlet n = socket.write(&buf).await?;\n```\n\nThe same applies to most of the Tokio 0.2 APIs.\n\n**Starting the Tokio runtime**\n\nSetting the entry point of a Tokio application can now be done with a proc macro:\n\n```text\n#[tokio::main]\nasync fn main() {\n    println!(\"Hello from Tokio!\");\n}\n```",
+     "Creating a runtime by hand is still supported. The proc macro just provides some sugar. The equivalent application would be:\n\n```text\nfn main() {\n    let mut rt = Runtime::new().unwrap();\n    rt.block_on(async {\n        println!(\"Hello from Tokio!\");\n    });\n}\n```\n\nThere is also a proc macro for tests that will set up a current thread runtime to run your tests:",
+     "Because async & await are not available on the stable Rust channel yet, this alpha release requires using nightly Rust. Tokio includes a rust-toolchain file that tracks the nightly Tokio tests again."
+    ]
+   },
+   {
+    "url": "https://docs.rs/tokio/latest/tokio/runtime/index.html",
+    "title": "tokio::runtime - Rust",
+    "snippets": [
+     "# Module runtime\u00a0Copy item path\nAvailable on **crate feature rt** only.\n\nThe Tokio runtime.\n\nUnlike other Rust programs, asynchronous applications require runtime support. In particular, the following runtime services are necessary:",
+     "## \u00a7Usage\n```rust\nuse tokio::net::TcpListener;\nuse tokio::io::{AsyncReadExt, AsyncWriteExt};\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let listener = TcpListener::bind(\"127.0.0.1:8080\").await?;\n\n    loop {\n        let (mut socket, _) = listener.accept().await?;\n\n        tokio::spawn(async move {\n            let mut buf = [0; 1024];\n\n            // In a loop, read data from the socket and write the data back.\n            loop {\n                let n = match socket.read(&mut buf).await {\n                    // socket closed\n                    Ok(0) => return,\n                    Ok(n) => n,\n                    Err(e) => {\n                        println!(\"failed to read from socket; err = {:?}\", e);\n                        return;\n                    }\n                };\n\n                // Write the data back\n                if let Err(e) = socket.write_all(&buf[0..n]).await {\n                    println!(\"failed to write to socket; err = {:?}\", e);\n                    return;\n                }\n            }\n        });\n    }\n}\n```",
+     "```rust\nuse tokio::net::TcpListener;\nuse tokio::io::{AsyncReadExt, AsyncWriteExt};\nuse tokio::runtime::Runtime;\n\nfn main() -> Result<(), Box<dyn std::error::Error>> {\n    // Create the runtime\n    let rt  = Runtime::new()?;\n\n    // Spawn the root task\n    rt.block_on(async {\n        let listener = TcpListener::bind(\"127.0.0.1:8080\").await?;\n\n        loop {\n            let (mut socket, _) = listener.accept().await?;\n\n            tokio::spawn(async move {\n                let mut buf = [0; 1024];\n\n                // In a loop, read data from the socket and write the data back.\n                loop {\n                    let n = match socket.read(&mut buf).await {\n                        // socket closed\n                        Ok(0) => return,\n                        Ok(n) => n,\n                        Err(e) => {\n                            println!(\"failed to read from socket; err = {:?}\", e);\n                            return;\n                        }\n                    };\n\n                    // Write the data back\n                    if let Err(e) = socket.write_all(&buf[0..n]).await {\n                        println!(\"failed to write to socket; err = {:?}\", e);\n                        return;\n                    }\n                }\n            });\n        }\n    })\n}\n```"
+    ]
+   },
+   {
+    "url": "https://docs.rs/google-oauth/latest/google_oauth/",
+    "title": "google_oauth - Rust",
+    "snippets": [
+     "# Crate google\\_oauth\u00a0Copy item path\n## \u00a7Google-Oauth\n### \u00a7Usage (async)\n#### \u00a71. Setup\n```rust\n#[tokio::main]\n// #[async_std::main] // when you use [async-std]\n// #[actix_web::main] // when you use [actix-web]\nasync fn main() {}\n```",
+     "#### \u00a72. Do Verification (id\\_token)\n````rust\nuse google_oauth::AsyncClient;\n\n#[tokio::main]\nasync fn main() {\n    let client_id = \"your client id\";\n    let id_token = \"the id_token\";\n\n    let client = AsyncClient::new(client_id);\n    /// or, if you want to set the default timeout for fetching certificates from Google, e.g, 30 seconds, you can:\n    /// ```rust\n    /// let client = AsyncClient::new(client_id).timeout(time::Duration::from_sec(30));\n    /// ```\n\n    let payload = client.validate_id_token(id_token).await.unwrap(); // In production, remember to handle this error.\n\n    // When we get the payload, that mean the id_token is valid.\n    // Usually we use `sub` as the identifier for our user...\n    println!(\"Hello, I am {}\", &payload.sub);\n}\n````",
+     "#### \u00a73. Do Verification (AccessToken)\n```rust\nuse google_oauth::AsyncClient;\n\n#[tokio::main]\nasync fn main() {\n    let access_token = \"the access_token\";\n\n    let client = AsyncClient::new(\"\");\n\n    let payload = client.validate_access_token(access_token).await.unwrap(); // In production, remember to handle this error.\n\n    // When we get the payload, that mean the id_token is valid.\n    // Usually we use `sub` as the identifier for our user...\n    println!(\"Hello, I am {}\", &payload.sub);\n}\n```"
+    ]
+   },
+   {
+    "url": "https://tokio.rs/tokio/tutorial/framing",
+    "title": "Framing",
+    "snippets": [
+     "# Framing\n```rust\nuse tokio::net::TcpStream;\nuse mini_redis::{Frame, Result};\n\nstruct Connection {\n    stream: TcpStream,\n    // ... other fields here\n}\n\nimpl Connection {\n    /// Read a frame from the connection.\n    /// \n    /// Returns `None` if EOF is reached\n    pub async fn read_frame(&mut self)\n        -> Result>\n    {\n        // implementation here\n    }\n\n    /// Write a frame to the connection.\n    pub async fn write_frame(&mut self, frame: &Frame)\n        -> Result<()>\n    {\n        // implementation here\n    }\n}\n```"
+    ]
+   },
+   {
+    "url": "https://docs.rs/r2e-rt/latest/r2e_rt/",
+    "title": "r2e_rt - Rust",
+    "snippets": [
+     "# Crate r2e\\_rt\u00a0Copy item path\n## \u00a7What is in scope\n- Cancellation: CancelToken, CancelDropGuard, ShutdownToken (the injectable app-shutdown bean)\n- Synchronisation: the sync module (mpsc, oneshot, broadcast, watch, Mutex, RwLock, Notify, Semaphore, OnceCell)\n- Async control flow: select!, pin!, join!, JoinSet\n- Streams: the stream re-export of tokio-stream\n- Runtime construction: RuntimeBuilder, Runtime, RuntimeHandle, RuntimeId, block\\_on, block\\_in\\_place"
+    ]
+   },
+   {
+    "url": "https://docs.rs/evdev/latest/evdev/",
+    "title": "evdev - Rust",
+    "snippets": [
+     "# Crate evdev\u00a0Copy item path\n## Structs\u00a7\n**EventStream tokio**: An asynchronous stream of input events."
+    ]
+   },
+   {
+    "url": "https://docs.rs/muxio-sync-rpc-client/latest/muxio_sync_rpc_client/",
+    "title": "muxio_sync_rpc_client - Rust",
+    "snippets": [
+     "# Crate muxio\\_sync\\_rpc\\_client\u00a0Copy item path\n\n## Crate muxio\\_sync\\_rpc\\_client\n\nSync RPC client: protocol over owned blocking byte halves or a spawned child process (whose piped stdio is one such pair), driven by std threads. No async runtime inside: the only executor contact is futures::executor::block_on in the reader thread, polling endpoint futures that never touch reactor-guarded APIs. tokio appears solely as the sync feature for the Mutex type the shared caller traits require."
+    ]
+   },
+   {
+    "url": "https://docs.rs/crate/ibapi/latest",
+    "title": "ibapi 4.2.0 - Docs.rs",
+    "snippets": [
+     "# ibapi 4.2.0\n## Examples\n### Requesting Historical Market Data\n#### Async Example\n```rust\nuse time::macros::datetime;\nuse ibapi::prelude::*;\n\n#[tokio::main]\nasync fn main() {\n    let connection_url = \"127.0.0.1:4002\";\n    let client = Client::connect(connection_url, 100).await.expect(\"connection to TWS failed!\");\n\n    let contract = Contract::stock(\"AAPL\").build();\n\n    let historical_data = client\n        .historical_data(&contract, HistoricalBarSize::Hour)\n        .ending(datetime!(2023-04-11 20:00 UTC))\n        .duration(1.days())\n        .what_to_show(HistoricalWhatToShow::Trades)\n        .trading_hours(TradingHours::Regular)\n        .fetch()\n        .await\n        .expect(\"historical data request failed\");\n\n    println!(\"start: {:?}, end: {:?}\", historical_data.start, historical_data.end);\n\n    for bar in &historical_data.bars {\n        println!(\"{bar:?}\");\n    }\n}\n```",
+     "### Requesting Realtime Market Data\n#### Async Example\n```rust\nuse ibapi::prelude::*;\n\n#[tokio::main]\nasync fn main() {\n    let client = Client::connect(\"127.0.0.1:4002\", 100).await.expect(\"connection to TWS failed!\");\n\n    // Request real-time bars data for AAPL with 5-second intervals\n    let contract = Contract::stock(\"AAPL\").build();\n    let mut subscription = client\n        .realtime_bars(&contract)\n        .trading_hours(TradingHours::Extended)\n        .subscribe()\n        .await\n        .expect(\"realtime bars request failed!\");\n\n    let mut data = subscription.filter_data();\n    while let Some(item) = data.next().await {\n        match item {\n            Ok(bar) => println!(\"bar: {bar:?}\"),\n            Err(e)  => { eprintln!(\"error: {e}\"); break; }\n        }\n    }\n}\n```",
+     "### Placing Orders\n#### Monitoring Order Updates\n##### Async Example\n```rust\nuse ibapi::prelude::*;\nuse futures::StreamExt;\n\n#[tokio::main]\nasync fn main() {\n    let connection_url = \"127.0.0.1:4002\";\n    let client = Client::connect(connection_url, 100).await.expect(\"connection to TWS failed!\");\n\n    // Create order update stream before submitting orders\n    let order_stream = client.order_update_stream().await.expect(\"failed to create stream\");\n\n    // Spawn task to monitor updates. `filter_data()` strips non-fatal notices so\n    // the loop body only sees data items; switch to `order_stream.next()` and a\n    // `Ok(SubscriptionItem::Data(_))` arm if you want to observe notices too.\n    let monitor_handle = tokio::spawn(async move {\n        let mut order_stream = order_stream.filter_data();\n        while let Some(update) = order_stream.next().await {\n            match update {\n                Ok(OrderUpdate::OrderStatus(status)) => {\n                    println!(\"Order {} Status: {}\", status.order_id, status.status);\n                    println!(\"  Filled: {}, Remaining: {}\", status.filled, status.remaining);\n                    if status.status.is_terminal() {\n                        break;\n                    }\n                }\n                Ok(OrderUpdate::OpenOrder(data)) => {\n                    println!(\"Open Order {}: {} {}\",\n                             data.order_id, data.order.action, data.contract.symbol);\n                }\n                Ok(OrderUpdate::ExecutionData(exec)) => {\n                    println!(\"Execution: {} shares @ {}\",\n                             exec.execution.shares, exec.execution.price);\n                }\n                Ok(OrderUpdate::OrderBound(binding)) => println!(\"Order binding: {binding:?}\"),\n                Ok(OrderUpdate::CommissionReport(report)) => {\n                    println!(\"Commission: ${}\", report.commission);\n                }\n                Err(e) => {\n                    eprintln!(\"Error: {:?}\", e);\n                    break;\n                }\n            }\n        }\n    });\n\n    // Give monitor time to start\n    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;\n\n    // Now submit orders - updates will be received by the monitoring task\n    let contract = Contract::stock(\"AAPL\").build();\n    let order_id = client.order(&contract)\n        .buy(100)\n        .market()\n        .submit()\n        .await\n        .expect(\"order submission failed!\");\n\n    println!(\"Order {} submitted\", order_id);\n\n    // Wait for updates\n    tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;\n\n    // Clean up\n    monitor_handle.abort();\n}\n```",
+     "## Handling notifications\n### Per-subscription notices\n#### Async example\n```rust\nuse ibapi::prelude::*;\n\n#[tokio::main]\nasync fn main() {\n    let client = Client::connect(\"127.0.0.1:4002\", 100).await.expect(\"connection failed\");\n    let contract = Contract::stock(\"AAPL\").build();\n    let mut subscription = client\n        .realtime_bars(&contract)\n        .trading_hours(TradingHours::Extended)\n        .subscribe()\n        .await\n        .expect(\"realtime bars request failed\");\n\n    while let Some(item) = subscription.next().await {\n        match item {\n            Ok(SubscriptionItem::Data(bar))    => println!(\"bar: {bar:?}\"),\n            Ok(SubscriptionItem::Notice(note)) => eprintln!(\"notice: {note}\"),\n            Err(e)                             => { eprintln!(\"error: {e}\"); break; }\n        }\n    }\n}\n```"
+    ]
+   },
+   {
+    "url": "https://docs.rs/sqlx/latest/sqlx/",
+    "title": "sqlx - Rust",
+    "snippets": [
+     "# Crate sqlx\u00a0Copy item path\n#### \u00a7Runtime Support\nSQLx supports both the Tokio and async-std runtimes.\n\nYou choose which runtime SQLx uses by default by enabling one of the following features:\n\n- runtime-async-std\n- runtime-tokio\n\nIf more than one runtime feature is enabled, the Tokio runtime is used if a Tokio context exists on the current thread, i.e. tokio::runtime::Handle::try_current() returns Ok; async-std is used otherwise."
+    ]
+   },
+   {
+    "url": "https://tokio.rs/",
+    "title": "Tokio - An asynchronous Rust runtime",
+    "snippets": [
+     "# Runtime Runtime\n## Including I/O, timer, filesystem, synchronization, and scheduling facilities, the Tokio runtime is the foundation of asynchronous applications.\n## Building on top of Rust, Tokio provides a multi-threaded, work-stealing scheduler. Applications can process hundreds of thousands of requests per second with minimal overhead.\n\n# Easy\n\n## async/await reduces the complexity of writing asynchronous applications. Paired with Tokio's utilities and vibrant ecosystem, writing applications is a breeze."
+    ]
+   },
+   {
+    "url": "https://docs.rs/async-compat",
+    "title": "async_compat - Rust",
+    "snippets": [
+     "# Crate async\\_compat\u00a0Copy item path\n1. Tokio\u2019s types cannot be used outside tokio context, so any attempt to use them will panic.\n  - Solution: If you apply the Compat adapter to a future, the future will manually enter the context of a global tokio runtime. If a runtime is already available via tokio thread-locals, then it will be used. Otherwise, a new single-threaded runtime will be created on demand.",
+     "- Solution: When the Compat adapter is applied to an I/O type, it will implement traits of the opposite kind. That\u2019s how you can use tokio-based types wherever futures-based types are expected, and the other way around.",
+     "## \u00a7Examples\n```rust\nfn main() -> std::io::Result<()> {\n    futures::executor::block_on(async {\n        let stdin = tokio::io::stdin();\n        let mut stdout = tokio::io::stdout();\n\n        // The following line will not work for two reasons:\n        // 1. Runtime error because stdin and stdout are used outside tokio context.\n        // 2. Compilation error due to mismatched `AsyncRead` and `AsyncWrite` traits.\n        futures::io::copy(stdin, &mut stdout).await?;\n        Ok(())\n    })\n}\n```"
+    ]
+   },
+   {
+    "url": "https://docs.rs/yt-dlp/latest/yt_dlp/",
+    "title": "yt_dlp - Rust",
+    "snippets": [
+     "# Crate yt\\_dlp\u00a0Copy item path\n## \ud83c\udfac\ufe0f A Rust library (with auto dependencies installation) for video downloading\n### \u00a7\ud83d\ude80 Advanced Features\n#### \u00a7\ud83d\udd11 Authentication & Cookies\n##### \u00a7Runtime (after build)\n```rust\nuse yt_dlp::Downloader;\nuse yt_dlp::client::deps::Libraries;\nuse std::path::PathBuf;\n\n#[tokio::main]\npub async fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let libraries = Libraries::new(\n        PathBuf::from(\"libs/yt-dlp\"),\n        PathBuf::from(\"libs/ffmpeg\"),\n    );\n\n    let mut downloader = Downloader::builder(libraries, PathBuf::from(\"output\"))\n        .build()\n        .await?;\n\n    // Apply cookies after build \u2014 propagates to both extractors and download args\n    downloader.set_cookies(\"cookies.txt\");\n    // or: downloader.set_cookies_from_browser(\"chrome\");\n    // or: downloader.set_netrc();\n\n    let video = downloader.fetch_video_infos(\"https://www.youtube.com/watch?v=gXtp6C-3JKo\").await?;\n    downloader.download_video(&video, \"video.mp4\").await?;\n\n    Ok(())\n}\n```",
+     "#### \u00a7\ud83d\udd34 Live Stream Recording (Feature: live-recording)\n##### \u00a7\ud83c\udfac FFmpeg fallback engine\n\u24d8\n\n```rust\nuse yt_dlp::Downloader;\nuse yt_dlp::events::RecordingMethod;\nuse yt_dlp::client::deps::Libraries;\nuse std::path::PathBuf;\nuse std::time::Duration;\n\n#[tokio::main]\nasync fn main() -> Result<(), Box<dyn std::error::Error>> {\n    let libraries = Libraries::new(\n        PathBuf::from(\"libs/yt-dlp\"),\n        PathBuf::from(\"libs/ffmpeg\"),\n    );\n    let downloader = Downloader::builder(libraries, \"output\").build().await?;\n\n    let video = downloader.fetch_video_infos(\"https://youtube.com/watch?v=LIVE_ID\").await?;\n\n    let result = downloader.record_live(&video, \"live-recording.ts\")\n        .with_method(RecordingMethod::Fallback)\n        .with_max_duration(Duration::from_secs(600))\n        .execute()\n        .await?;\n\n    Ok(())\n}\n```"
+    ]
+   },
+   {
+    "url": "https://docs.rs/fanta-gpui-smol/latest/smol/",
+    "title": "smol - Rust",
+    "snippets": [
+     "# Crate smol\u00a0Copy item path\n\n## Crate smol\n\nA small and fast async runtime.\n\nThis crate simply re-exports other smaller async crates (see the source).\n\nTo use tokio-based libraries with smol, apply the async-compat adapter to futures and I/O types.\n\nSee the smol-macros crate if you want a no proc-macro, fast compiling, easy-to-use async main and/or multi-threaded Executor setup out of the box."
+    ]
+   },
+   {
+    "url": "https://docs.rs/tokio/latest/tokio/io/",
+    "title": "tokio::io - Rust",
+    "snippets": [
+     "## Module io\n\ntokio\n\n# Module io\u00a0Copy item path\n\nTraits, helpers, and type definitions for asynchronous I/O functionality.\n\nThis module is the asynchronous version of std::io. Primarily, it defines two traits, AsyncRead and AsyncWrite, which are asynchronous versions of the Read and Write traits in the standard library.",
+     "# Module io\u00a0Copy item path\n## \u00a7AsyncRead and AsyncWrite\nLike the standard library\u2019s Read and Write traits, AsyncRead and AsyncWrite provide the most general interface for reading and writing input and output. Unlike the standard library\u2019s traits, however, they are *asynchronous* \u2014 meaning that reading from or writing to a tokio::io type will *yield* to the Tokio scheduler when IO is not ready, rather than blocking.",
+     "## \u00a7Standard input and output\nTokio provides asynchronous APIs to standard input, output, and error. These APIs are very similar to the ones provided by std, but they also implement AsyncRead and AsyncWrite.\n\nNote that the standard input / output APIs **must** be used from the context of the Tokio runtime, as they require Tokio-specific features to function. Calling these functions outside of a Tokio runtime will panic."
+    ]
+   },
+   {
+    "url": "https://tokio.rs/blog/2019-12-compat",
+    "title": "Announcing Tokio-Compat",
+    "snippets": [
+     "# Announcing Tokio-Compat\nThe release of Tokio 0.2 was the culmination of a great deal of hard work from numerous contributors, and has brought several significant improvements to Tokio. Using std::future and async/await makes writing async code using Tokio much more ergonomic, and a new scheduler implementation makes Tokio 0.2's thread pool as much as 10x faster. However, updating existing Tokio 0.1 projects to use 0.2 and std::future poses some new challenges.",
+     "# Motivation\nIn order to enable incremental migration, we need a compatibility layer that allows us to use code written against both the legacy Tokio 0.1/futures 0.1 APIs *and* the new Tokio 0.2/std::future APIs in the same project.",
+     "The futures crate's compat module provides interoperability between futures 0.1 and std::future *future types*, such as implementing std::future::Future for a type that implements the futures 0.1 Future This is a foundational part of the compatibility story, but, on its own, it is insufficient to allow most projects to be incrementally updated. Most code using Tokio relies on the *runtime services* that Tokio provides. These runtime services include the ability to spawn other tasks; the I/O driver, which allows tasks to be notified by the operating system's async I/O APIs, and the timer.",
+     "Futures which rely on Tokio 0.1's runtime services will panic when they try to access those runtime services (such as by spawning a task or creating a timer) on the Tokio 0.2 runtime, even if they are converted to the std::future::Future trait. This is because the new runtime does not provide these services in a way compatible with Tokio 0.1's APIs.",
+     "The tokio-compat crate helps to bridge this gap by providing a *compatibility runtime*, which provides runtime services compatible with both Tokio 0.1 *and* Tokio 0.2.",
+     "```rust\nuse futures_01::future::lazy;\n\ntokio_compat::run(lazy(|| {\n    // spawn a `futures` 0.1 future using the `spawn` function from the\n    // `tokio` 0.1 crate:\n    tokio_01::spawn(lazy(|| {\n        println!(\"hello from tokio 0.1!\");\n        Ok(())\n    }));\n\n    // spawn an `async` block future on the same runtime using `tokio`\n    // 0.2's `spawn`:\n    tokio_02::spawn(async {\n        println!(\"hello from tokio 0.2!\");\n    });\n\n    Ok(())\n}))\n```",
+     "```rust\nuse std::time::{Duration, Instant};\nuse tokio_compat::prelude::*;\n\ntokio_compat::run_std(async {\n    // Wait for a `tokio` 0.1 `Delay`...\n    let when = Instant::now() + Duration::from_millis(10);\n    tokio_01::timer::Delay::new(when)\n        // convert the delay future into a `std::future` that we can `await`.\n        .compat()\n        .await\n        .expect(\"tokio 0.1 timer should work!\");\n    println!(\"10 ms have elapsed\");\n\n    // Wait for a `tokio` 0.2 `Delay`...\n    tokio_02::time::delay_for(Duration::from_millis(20)).await;\n    println!(\"20 ms have elapsed\");\n});\n```",
+     "# Using tokio-compat\nIn all these cases, tokio-compat is hopefully a temporary necessity: ideally, most code should transition to using async/await, std::future, and Tokio 0.2. Although we've worked hard to make the compatibility layer as lightweight as possible, it is, by definition, an additional source of complexity in the system. Furthermore, async/await offers significant ergonomics advantages, and code using it is easier to understand and modify, so most projects will benefit greatly from moving to it. The role of tokio-compat is to make this transition easier and more incremental.",
+     "## Getting Started\nOnly the tokio::runtime module and tokio::run function need to be replaced with tokio-compat's versions. Other APIs exposed by Tokio 0.1, such as tokio::net, will work properly on the compatibility runtime (with some exceptions we'll discuss shortly). When running on the compatibility runtime, code which spawns futures 0.1 tasks via tokio 0.1's spawn function will work, as will code that spawns std::future tasks via tokio 0.2's spawn.",
+     "Additionally, the tokio-compat runtimes, TaskExecutor s, and other types *also* provide std::future-compatible methods. For example, the Runtime has both a spawn, which spawns 0.1 futures, and a spawn_std, which spawns a std::future future (or an async function/block)."
+    ]
+   }
+  ]
+ },
+ "sources": {
+  "https://docs.rs/async-std": {
+   "title": "async_std - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/tokio-async-std/1.5.3/async_std/runtime/": {
+   "title": "async_std::runtime - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/tokio-async-std/latest/async_std/runtime/struct.Runtime.html": {
+   "title": "Runtime in async_std::runtime - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://tokio.rs/tokio/tutorial/async": {
+   "title": "Async in depth",
+   "hostname": "tokio.rs",
+   "age": [
+    "Friday, May 14, 2021",
+    "2021-05-14",
+    "1962 days ago",
+    "2021-05-14T00:00:00Z"
+   ]
+  },
+  "https://docs.rs/tokio": {
+   "title": "tokio - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://tokio.rs/blog/2019-08-alphas": {
+   "title": "Tokio alpha release with async & await",
+   "hostname": "tokio.rs",
+   "age": [
+    "Thursday, August 08, 2019",
+    "2019-08-08",
+    "2607 days ago",
+    "2019-08-08T00:00:00Z"
+   ]
+  },
+  "https://docs.rs/tokio/latest/tokio/runtime/index.html": {
+   "title": "tokio::runtime - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/google-oauth/latest/google_oauth/": {
+   "title": "google_oauth - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://tokio.rs/tokio/tutorial/framing": {
+   "title": "Framing",
+   "hostname": "tokio.rs",
+   "age": []
+  },
+  "https://docs.rs/r2e-rt/latest/r2e_rt/": {
+   "title": "r2e_rt - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/evdev/latest/evdev/": {
+   "title": "evdev - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/muxio-sync-rpc-client/latest/muxio_sync_rpc_client/": {
+   "title": "muxio_sync_rpc_client - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/crate/ibapi/latest": {
+   "title": "ibapi 4.2.0 - Docs.rs",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/sqlx/latest/sqlx/": {
+   "title": "sqlx - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://tokio.rs/": {
+   "title": "Tokio - An asynchronous Rust runtime",
+   "hostname": "tokio.rs",
+   "age": [
+    "Friday, July 30, 2021",
+    "2021-07-30",
+    "1885 days ago",
+    "2021-07-30T00:00:00Z"
+   ]
+  },
+  "https://docs.rs/async-compat": {
+   "title": "async_compat - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/yt-dlp/latest/yt_dlp/": {
+   "title": "yt_dlp - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/fanta-gpui-smol/latest/smol/": {
+   "title": "smol - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://docs.rs/tokio/latest/tokio/io/": {
+   "title": "tokio::io - Rust",
+   "hostname": "docs.rs",
+   "age": []
+  },
+  "https://tokio.rs/blog/2019-12-compat": {
+   "title": "Announcing Tokio-Compat",
+   "hostname": "tokio.rs",
+   "age": [
+    "Wednesday, December 18, 2019",
+    "2019-12-18",
+    "2475 days ago",
+    "2019-12-18T00:00:00Z"
+   ]
+  }
+ }
+}
