@@ -84,6 +84,37 @@ A bare `$boost=2` on one domain was enough to hand it 80% of a page.
 
 That is not obvious from the syntax, where all three read like symmetric knobs.
 
+## Does it generalize?
+
+![Testing one Goggle across a set of eight queries](docs/queryset.png)
+
+Tuning a Goggle on one query is the trap Brave's own documentation warns about, and
+everything above is a single-query observation. So the ranking tab can run the Goggle
+you just tuned across a set of queries and report where it helps and where it hurts.
+
+Each query gets a verdict from its diff:
+
+- **overshoot** — the Goggle pulled in results absent from that query's baseline window,
+  so a `$boost` reached past the pages it was aimed at
+- **narrowed** — host diversity fell without anything being pulled in
+- **clean** — it only reordered, or removed hosts it explicitly named
+
+Run the same eight queries under two Goggles and the picture is unambiguous:
+
+| Goggle | Overshot | Median host change | Results pulled in |
+|---|---|---|---|
+| three `$discard` + two `$boost` | **8 of 8** | −7 | 56 |
+| the same three `$discard`, no boost | **0 of 8** | −0.5 | 0 |
+
+That is the difference between "I saw something odd on one query" and "this instruction
+is too broad." `$boost` promotes a whole host on every query it touches; `$discard`
+removes what you named and nothing else.
+
+Re-running a set against a different Goggle costs half, because the baselines are
+already cached — the second run above made 8 calls, not 16. That is the caching
+decision from the Design section earning its place: without it, this feature would cost
+double on every iteration.
+
 ## Grounding bake-off
 
 ![The same question grounded through llm/context under three different Goggles](docs/bakeoff.png)
@@ -152,6 +183,7 @@ back — it changes who is in it.
 src/lib/diff.ts       pure ranking diff — no network, no DOM, fully unit tested
 src/lib/grounding.ts  pure grounding-set metrics; shares hostOf with diff.ts
 src/lib/news.ts       pure news-mix metrics: outlets, concentration, recency
+src/lib/evaluate.ts   per-query verdicts and aggregation across a query set
 src/lib/brave.ts      Brave API client; GET, switching to POST for long Goggles
 src/server/app.ts     the Hono API, with storage and guards injected
 src/server/ports.ts   interfaces the two runtimes implement differently
@@ -262,7 +294,7 @@ accounting.
 ## Tests
 
 ```bash
-npm test          # 48 tests
+npm test          # 59 tests
 npm run build     # typecheck + production build
 npm run shot      # regenerate all three screenshots (needs `npm run dev` running)
 ```
@@ -277,12 +309,13 @@ daily budget are tested with an injected clock. The grounding metrics are covere
 source overlap, host concentration, snippet density, median freshness and empty
 contexts, against recorded `llm/context` responses; the news metrics cover outlet
 concentration, median and oldest recency, undated results and outlet churn, against
-recorded `news/search` responses. `npm run shot` doubles as a smoke test — it fails on
+recorded `news/search` responses. The query-set verdicts are covered for
+verdict precedence, median-not-mean aggregation, and the rule that one bad query does
+not count as generalizing. `npm run shot` doubles as a smoke test — it fails on
 any console error.
 
 ## Next
 
-- Save a query set and score a Goggle across all of it, not one query at a time
 - Diff two Goggles against each other, not just against the baseline
 - Generate a starting Goggle from a plain-English description of the intent
 - Score grounding freshness against the question's own volatility — a stale source is

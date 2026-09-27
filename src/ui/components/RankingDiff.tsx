@@ -4,6 +4,7 @@ import { PRESETS } from '../presets.js'
 import { MetricsStrip } from './MetricsStrip.js'
 import { ResultColumn } from './ResultColumn.js'
 import { Legend } from './Legend.js'
+import { QuerySet } from './QuerySet.js'
 
 interface CompareResponse {
   query: string
@@ -152,6 +153,8 @@ export function RankingDiff({ query, setQuery }: Props) {
           )}
         </>
       )}
+
+      <QuerySet goggle={goggle} />
 
       {!data && !error && (
         <p className="empty">

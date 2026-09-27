@@ -202,3 +202,33 @@ button.linky:hover { text-decoration: underline; }
 /* ---------- news mix ---------- */
 .newsmix .config { display: grid; gap: 6px; }
 .newsmix .config select { font-size: 13px; }
+
+/* ---------- query set panel ---------- */
+.queryset { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 16px; }
+.disclosure {
+  background: none; border: 0; padding: 0; font: inherit; color: var(--text);
+  cursor: pointer; display: grid; grid-template-columns: 16px auto; gap: 0 8px; text-align: left;
+  font-weight: 550;
+}
+.disclosure small { grid-column: 2; font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.disclosure .caret { color: var(--brave); }
+.disclosure:hover { color: var(--brave); }
+.queryset .row { margin-top: 14px; align-items: flex-end; }
+.verdict-banner {
+  margin-top: 16px; padding: 12px 14px; border-radius: 8px; font-size: 14px;
+  border: 1px solid var(--line);
+}
+.verdict-banner.bad {
+  border-color: color-mix(in srgb, var(--gone) 45%, var(--line));
+  background: color-mix(in srgb, var(--gone) 9%, transparent);
+}
+.verdict-banner.bad strong { color: var(--gone); }
+.verdict-banner.ok {
+  border-color: color-mix(in srgb, var(--up) 40%, var(--line));
+  background: color-mix(in srgb, var(--up) 8%, transparent);
+}
+.verdict-banner.ok strong { color: var(--up); }
+.verdict { font-weight: 600; font-size: 13px; }
+.verdict.overshoot { color: var(--gone); }
+.verdict.narrowed { color: var(--down); }
+.verdict.clean { color: var(--up); }

@@ -3,6 +3,7 @@ import { search, context, news, BraveApiError, type SearchResponse } from '../li
 import { diff } from '../lib/diff.js'
 import { summarize, compareToBaseline, type LlmContext } from '../lib/grounding.js'
 import { summarizeNews, compareOutlets, type NewsResult } from '../lib/news.js'
+import { verdictFor, summarizeRun, type QueryOutcome } from '../lib/evaluate.js'
 import { NO_RATE_LIMIT, UNLIMITED_BUDGET, type BaselineStore, type Budget, type RateLimiter } from './ports.js'
 
 /** Fetch wider than we show, so a promotion from off-screen is not mistaken for a new result. */
@@ -10,6 +11,8 @@ export const FETCH_COUNT = 20
 export const DISPLAY_COUNT = 10
 /** A bake-off costs one API call per config, so the count is capped. */
 export const MAX_GROUND_CONFIGS = 4
+/** A query set costs up to two calls per query, so the set size is capped. */
+export const MAX_EVAL_QUERIES = 10
 
 export interface AppDeps {
   apiKey: string
@@ -276,6 +279,88 @@ export function createApp(deps: AppDeps) {
         })),
         meta: {
           callsMade: configs.length,
+          elapsedMs: Date.now() - started,
+          budgetRemaining: await budget.remaining(),
+        },
+      })
+    } catch (err) {
+      if (err instanceof BraveApiError) return c.json({ error: err.message, status: err.status }, 502)
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  })
+
+  /**
+   * Runs one Goggle across a set of queries. Tuning on a single query is the
+   * trap Brave's own docs warn about — this is the "test set" half of that
+   * advice, and it is what separates "this rule is too broad" from "that query
+   * was unlucky".
+   */
+  app.post('/api/evaluate', async (c) => {
+    const who = clientKey(c.req.raw)
+    if (!(await rateLimiter.check(who))) {
+      return c.json(
+        {
+          error: 'Too many runs from this address.',
+          hint: 'This is a shared demo on a metered API key. Try again in a few minutes, or run it locally — see the README.',
+        },
+        429,
+      )
+    }
+
+    const body = await c.req.json().catch(() => ({}))
+    const goggle = typeof body.goggle === 'string' ? body.goggle.trim() : ''
+    const country = typeof body.country === 'string' ? body.country : 'us'
+    const rawQueries: unknown[] = Array.isArray(body.queries) ? body.queries : []
+    const queries: string[] = [
+      ...new Set(
+        rawQueries
+          .filter((q): q is string => typeof q === 'string' && q.trim().length > 0)
+          .map((q) => q.trim()),
+      ),
+    ].slice(0, MAX_EVAL_QUERIES)
+
+    if (!goggle) return c.json({ error: 'goggle is required' }, 400)
+    if (queries.length === 0) return c.json({ error: 'at least one query is required' }, 400)
+
+    // Baselines already cached cost nothing, so reserve only what will be spent.
+    // Re-running a set against a new Goggle is half price for exactly this reason.
+    const cacheKeys = queries.map((q) => `${country}::${FETCH_COUNT}::${q}`)
+    const cachedFlags = await Promise.all(cacheKeys.map(async (k) => (await baselines.get(k)) !== undefined))
+    const needed = queries.length + cachedFlags.filter((hit) => !hit).length
+    if (!(await budget.tryConsume(needed))) {
+      return c.json(
+        {
+          error: "This demo's daily Brave API budget is spent.",
+          hint: 'It resets at 00:00 UTC. To run it without a cap, clone the repo and use your own key — see the README.',
+        },
+        503,
+      )
+    }
+
+    const started = Date.now()
+    try {
+      const outcomes: QueryOutcome[] = []
+      for (const [i, query] of queries.entries()) {
+        const key = cacheKeys[i]!
+        let baseline = await baselines.get(key)
+        if (!baseline) {
+          baseline = await schedule(() => search({ query, count: FETCH_COUNT, country }, apiKey))
+          await baselines.set(key, baseline)
+        }
+        const goggled = await schedule(() =>
+          search({ query, goggle, count: FETCH_COUNT, country }, apiKey),
+        )
+        const metrics = diff(baseline.results, goggled.results, DISPLAY_COUNT).metrics
+        outcomes.push({ query, metrics, verdict: verdictFor(metrics) })
+      }
+
+      return c.json({
+        goggle,
+        outcomes,
+        summary: summarizeRun(outcomes),
+        meta: {
+          callsMade: needed,
+          baselinesCached: cachedFlags.filter(Boolean).length,
           elapsedMs: Date.now() - started,
           budgetRemaining: await budget.remaining(),
         },

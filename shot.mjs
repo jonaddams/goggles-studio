@@ -22,6 +22,18 @@ await page.waitForTimeout(600)
 await page.screenshot({ path: 'docs/screenshot.png', fullPage: true })
 console.log('ranking tiles:', (await page.locator('.tile-value').allTextContents()).join(' | '))
 
+// Query set panel. Costs up to 2 calls per query, so it is opt-in: the routine
+// smoke test should not spend 20 API calls.
+if (process.env.SHOT_QUERYSET) {
+  await page.locator('button.disclosure').click()
+  await page.locator('.queryset button.run').click()
+  await page.waitForSelector('.verdict-banner', { timeout: 180_000 })
+  await page.waitForTimeout(600)
+  await page.screenshot({ path: 'docs/queryset.png', fullPage: true })
+  console.log('query set verdict:', await page.locator('.verdict-banner strong').textContent())
+  await page.locator('button.disclosure').click()
+}
+
 // Grounding bake-off
 await page.getByRole('button', { name: /Grounding bake-off/ }).click()
 await page.click('button.run')
