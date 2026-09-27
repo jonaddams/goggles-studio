@@ -25,10 +25,10 @@
     }
   ],
 
-  // Holds the day's Brave call count. Create with:
-  //   wrangler kv namespace create BUDGET
-  // then paste the returned id here before deploying.
-  "kv_namespaces": [{ "binding": "BUDGET", "id": "REPLACE_WITH_ID_FROM_KV_NAMESPACE_CREATE" }],
+  // Holds the day's Brave call count. If you are deploying your own copy,
+  // replace this id with the one from `wrangler kv namespace create BUDGET`.
+  // A namespace id is a resource identifier, not a credential.
+  "kv_namespaces": [{ "binding": "BUDGET", "id": "60a466dd81564b55aa310b6cfc77e6d7" }],
 
   "vars": {
     // Hard ceiling on Brave calls per UTC day, across all visitors.

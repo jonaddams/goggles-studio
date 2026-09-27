@@ -4,6 +4,8 @@ A workbench for authoring [Brave Search Goggles](https://brave.com/goggles). Wri
 Goggle, run it against a live query, and see exactly what it did to the ranking —
 including the part that is easy to miss: what it broke.
 
+**Live: [goggles-studio.jonaddams.workers.dev](https://goggles-studio.jonaddams.workers.dev)**
+
 ![Goggles Studio comparing a baseline ranking against a goggled one](docs/screenshot.png)
 
 ## Why
@@ -127,11 +129,14 @@ otherwise risks request-URL length limits.
 One Worker serves both the built SPA and the API from the same origin.
 
 ```bash
-wrangler login
-wrangler kv namespace create BUDGET      # paste the returned id into wrangler.jsonc
-wrangler secret put BRAVE_SEARCH_API_KEY # never in config or git
+npx wrangler login
+npx wrangler kv namespace create BUDGET      # paste the returned id into wrangler.jsonc
+npx wrangler secret put BRAVE_SEARCH_API_KEY # never in config or git
 npm run deploy
 ```
+
+Wrangler has no Homebrew formula; it ships through npm, and is pinned here as a
+devDependency so deploys use the version this repo was tested against.
 
 `npm run preview` runs the same Worker locally against `workerd` first. It reads the
 key from `.dev.vars` rather than `.env.local` — Wrangler's own convention, gitignored
