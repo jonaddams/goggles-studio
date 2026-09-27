@@ -1,5 +1,7 @@
 # Goggles Studio
 
+[![CI](https://github.com/jonaddams/goggles-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/jonaddams/goggles-studio/actions/workflows/ci.yml)
+
 A workbench for authoring [Brave Search Goggles](https://brave.com/goggles). One
 question, three surfaces, one recurring inquiry: **what did this Goggle replace?**
 
@@ -264,6 +266,10 @@ npm test          # 48 tests
 npm run build     # typecheck + production build
 npm run shot      # regenerate all three screenshots (needs `npm run dev` running)
 ```
+
+CI runs the suite and both typechecks on every push. It needs no API key: the tests
+run against recorded Brave responses in `test/fixtures`, so they spend no calls and
+cannot flake on a live endpoint.
 
 The diff engine is covered for rank deltas, discards, the `pushedOut`/`dropped`
 distinction, host concentration, and empty-result edge cases; the cache, throttle and

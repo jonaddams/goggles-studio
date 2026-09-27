@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel an in-flight run when a branch is pushed again.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The suite runs against recorded Brave responses in test/fixtures, so CI
+      # needs no BRAVE_SEARCH_API_KEY and spends no API calls.
+      - name: Test
+        run: npm test
+
+      # Typechecks the Node and Workers entrypoints separately — they use
+      # incompatible lib types — then builds the UI.
+      - name: Typecheck and build
+        run: npm run build
