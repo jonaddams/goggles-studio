@@ -129,3 +129,42 @@ export async function context(
   if (!res.ok) throw new BraveApiError(res.status, await res.text())
   return res.json()
 }
+
+const NEWS_ENDPOINT = 'https://api.search.brave.com/res/v1/news/search'
+
+export interface NewsParams {
+  query: string
+  goggle?: string
+  count?: number
+  /** Brave's window codes: pd/pw/pm/py, or a date range. Omit for no filter. */
+  freshness?: string
+}
+
+/**
+ * Searches the news index.
+ *
+ * Worth knowing: without `freshness` this is not a recency feed. For an
+ * evergreen query it returns the same pages the web endpoint does, dated by
+ * publication — we saw a 2009 tutorial come back as "news". See the README.
+ */
+export async function news(
+  { query, goggle, count = 20, freshness }: NewsParams,
+  apiKey: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ results: unknown[] }> {
+  const qs = new URLSearchParams({ q: query, count: String(count) })
+  const trimmed = goggle?.trim()
+  if (trimmed) qs.set('goggles', trimmed)
+  if (freshness) qs.set('freshness', freshness)
+
+  const res = await fetchImpl(`${NEWS_ENDPOINT}?${qs}`, {
+    headers: {
+      Accept: 'application/json',
+      'Accept-Encoding': 'gzip',
+      'X-Subscription-Token': apiKey,
+    },
+  })
+  if (!res.ok) throw new BraveApiError(res.status, await res.text())
+  const raw = (await res.json()) as { results?: unknown[] }
+  return { results: raw.results ?? [] }
+}

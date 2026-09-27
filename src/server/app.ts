@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
-import { search, context, BraveApiError, type SearchResponse } from '../lib/brave.js'
+import { search, context, news, BraveApiError, type SearchResponse } from '../lib/brave.js'
 import { diff } from '../lib/diff.js'
 import { summarize, compareToBaseline, type LlmContext } from '../lib/grounding.js'
+import { summarizeNews, compareOutlets, type NewsResult } from '../lib/news.js'
 import { NO_RATE_LIMIT, UNLIMITED_BUDGET, type BaselineStore, type Budget, type RateLimiter } from './ports.js'
 
 /** Fetch wider than we show, so a promotion from off-screen is not mistaken for a new result. */
@@ -198,6 +199,89 @@ export function createApp(deps: AppDeps) {
       if (err instanceof BraveApiError) {
         return c.json({ error: err.message, status: err.status }, 502)
       }
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  })
+
+  /**
+   * Runs `news/search` under several combinations of freshness window and
+   * Goggle. The first config is the baseline the rest are measured against.
+   */
+  app.post('/api/news', async (c) => {
+    const who = clientKey(c.req.raw)
+    if (!(await rateLimiter.check(who))) {
+      return c.json(
+        {
+          error: 'Too many runs from this address.',
+          hint: 'This is a shared demo on a metered API key. Try again in a few minutes, or run it locally — see the README.',
+        },
+        429,
+      )
+    }
+
+    const body = await c.req.json().catch(() => ({}))
+    const query = typeof body.query === 'string' ? body.query.trim() : ''
+    const configs: { name: string; goggle?: string; freshness?: string }[] = Array.isArray(
+      body.configs,
+    )
+      ? body.configs
+          .filter((x: unknown): x is { name: string } =>
+            Boolean(x) && typeof (x as { name?: unknown }).name === 'string',
+          )
+          .slice(0, MAX_GROUND_CONFIGS)
+      : []
+    if (!query) return c.json({ error: 'query is required' }, 400)
+    if (configs.length === 0) return c.json({ error: 'at least one config is required' }, 400)
+
+    if (!(await budget.tryConsume(configs.length))) {
+      return c.json(
+        {
+          error: "This demo's daily Brave API budget is spent.",
+          hint: 'It resets at 00:00 UTC. To run it without a cap, clone the repo and use your own key — see the README.',
+        },
+        503,
+      )
+    }
+
+    const started = Date.now()
+    try {
+      const runs: { cfg: (typeof configs)[number]; results: NewsResult[]; elapsedMs: number }[] = []
+      for (const cfg of configs) {
+        const at = Date.now()
+        const r = await schedule(() =>
+          news(
+            { query, goggle: cfg.goggle, freshness: cfg.freshness, count: FETCH_COUNT },
+            apiKey,
+          ),
+        )
+        runs.push({ cfg, results: r.results as NewsResult[], elapsedMs: Date.now() - at })
+      }
+
+      const baseline = runs[0]!
+      return c.json({
+        query,
+        configs: runs.map((run, i) => ({
+          name: run.cfg.name,
+          goggle: run.cfg.goggle ?? '',
+          freshness: run.cfg.freshness ?? '',
+          elapsedMs: run.elapsedMs,
+          summary: summarizeNews(run.results),
+          results: run.results.slice(0, 8).map((r) => ({
+            url: r.url,
+            title: r.title ?? null,
+            age: r.age ?? null,
+            outlet: r.meta_url?.hostname ?? null,
+          })),
+          vsBaseline: i === 0 ? null : compareOutlets(baseline.results, run.results),
+        })),
+        meta: {
+          callsMade: configs.length,
+          elapsedMs: Date.now() - started,
+          budgetRemaining: await budget.remaining(),
+        },
+      })
+    } catch (err) {
+      if (err instanceof BraveApiError) return c.json({ error: err.message, status: err.status }, 502)
       return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
     }
   })

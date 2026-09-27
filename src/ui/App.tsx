@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { RankingDiff } from './components/RankingDiff.js'
 import { BakeOff } from './components/BakeOff.js'
+import { NewsMix } from './components/NewsMix.js'
 import { PRESETS } from './presets.js'
 
-type Tab = 'ranking' | 'grounding'
+type Tab = 'ranking' | 'grounding' | 'news'
 
 const TABS: { id: Tab; label: string; blurb: string }[] = [
   { id: 'ranking', label: 'Ranking diff', blurb: 'what a Goggle did to the results page' },
   { id: 'grounding', label: 'Grounding bake-off', blurb: "what it did to an LLM's sources" },
+  { id: 'news', label: 'News mix', blurb: 'what it did to the outlets — and how old they are' },
 ]
 
 export function App() {
@@ -23,7 +25,7 @@ export function App() {
           Goggles <span>Studio</span>
         </h1>
         <p className="tagline">
-          Two views of one question: what a Brave Goggle <em>replaced</em>.
+          One question, three surfaces: what a Brave Goggle <em>replaced</em> on each.
         </p>
         <nav className="tabs">
           {TABS.map((t) => (
@@ -39,11 +41,9 @@ export function App() {
         </nav>
       </header>
 
-      {tab === 'ranking' ? (
-        <RankingDiff query={query} setQuery={setQuery} />
-      ) : (
-        <BakeOff query={query} setQuery={setQuery} />
-      )}
+      {tab === 'ranking' && <RankingDiff query={query} setQuery={setQuery} />}
+      {tab === 'grounding' && <BakeOff query={query} setQuery={setQuery} />}
+      {tab === 'news' && <NewsMix query={query} setQuery={setQuery} />}
     </div>
   )
 }

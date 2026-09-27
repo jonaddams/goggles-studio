@@ -198,3 +198,7 @@ button.linky {
   cursor: pointer; text-align: left;
 }
 button.linky:hover { text-decoration: underline; }
+
+/* ---------- news mix ---------- */
+.newsmix .config { display: grid; gap: 6px; }
+.newsmix .config select { font-size: 13px; }

@@ -1,0 +1,166 @@
+{
+ "results": [
+  {
+   "url": "https://www.sqlitetutorial.net/sqlite-python/",
+   "title": "SQLite Python",
+   "page_age": "2016-01-03T11:02:24",
+   "age": "January 3, 2016",
+   "meta_url": {
+    "hostname": "www.sqlitetutorial.net"
+   }
+  },
+  {
+   "url": "https://medium.com/@drpa/leveraging-the-power-of-sqlite-with-python-a-practical-tutorial-167fc9dba1c7",
+   "title": "Leveraging the Power of SQLite with Python: A Practical Tutorial",
+   "page_age": "2023-04-28T19:45:07",
+   "age": "April 28, 2023",
+   "meta_url": {
+    "hostname": "medium.com"
+   }
+  },
+  {
+   "url": "https://www.freecodecamp.org/news/work-with-sqlite-in-python-handbook/",
+   "title": "How to Work with SQLite in Python \u2013 A Handbook for Beginners",
+   "page_age": "2024-10-02T09:44:37",
+   "age": "October 2, 2024",
+   "meta_url": {
+    "hostname": "www.freecodecamp.org"
+   }
+  },
+  {
+   "url": "https://www.tutorialspoint.com/sqlite/sqlite_python.htm",
+   "title": "SQLite - Python",
+   "page_age": "2009-11-29T01:06:34",
+   "age": "November 29, 2009",
+   "meta_url": {
+    "hostname": "www.tutorialspoint.com"
+   }
+  },
+  {
+   "url": "https://blog.pythonlibrary.org/2012/07/18/python-a-simple-step-by-step-sqlite-tutorial/",
+   "title": "Python: A Simple Step-by-Step SQLite Tutorial - Mouse Vs Python",
+   "page_age": "2012-07-18T23:03:08",
+   "age": "July 18, 2012",
+   "meta_url": {
+    "hostname": "blog.pythonlibrary.org"
+   }
+  },
+  {
+   "url": "https://dev.to/shagun_7cf7fea93147cfb414/a-complete-guide-to-connecting-python-with-sqlite-405p",
+   "title": "A Complete Guide to Connecting Python with SQLite - DEV Community",
+   "page_age": "2026-09-13T09:35:49",
+   "age": "2 weeks ago",
+   "meta_url": {
+    "hostname": "dev.to"
+   }
+  },
+  {
+   "url": "https://blog.sqlite.ai/tutorial-sqlite3-sqlite-python",
+   "title": "A Guide to sqlite3: Python SQLite Tutorial with Examples",
+   "page_age": "2024-04-10T20:11:35",
+   "age": "April 10, 2024",
+   "meta_url": {
+    "hostname": "blog.sqlite.ai"
+   }
+  },
+  {
+   "url": "https://www.sqlitetutorial.net/sqlite-python/sqlite-python-select/",
+   "title": "SQLite Python: Selecting Data from a Table",
+   "page_age": "2016-04-12T12:57:47",
+   "age": "April 12, 2016",
+   "meta_url": {
+    "hostname": "www.sqlitetutorial.net"
+   }
+  },
+  {
+   "url": "https://www.geeksforgeeks.org/python/python-sqlite-connecting-to-database/",
+   "title": "Python SQLite - Connecting to Database - GeeksforGeeks",
+   "page_age": "2021-05-13T00:48:09",
+   "age": "May 13, 2021",
+   "meta_url": {
+    "hostname": "www.geeksforgeeks.org"
+   }
+  },
+  {
+   "url": "https://dev.to/arctype/a-hitchhiker-s-guide-to-sqlite-with-python-3c9j",
+   "title": "A Hitchhiker's Guide to SQLite with Python - DEV Community",
+   "page_age": "2021-05-04T19:08:26",
+   "age": "May 4, 2021",
+   "meta_url": {
+    "hostname": "dev.to"
+   }
+  },
+  {
+   "url": "https://realpython.com/python-sqlite-sqlalchemy/",
+   "title": "Data Management With Python, SQLite, and SQLAlchemy \u2013 Real Python",
+   "page_age": "2020-10-14T14:00:00",
+   "age": "October 14, 2020",
+   "meta_url": {
+    "hostname": "realpython.com"
+   }
+  },
+  {
+   "url": "https://medium.com/@adilsaid64/sql-practice-made-easy-using-sqlite-and-python-in-jupyter-notebooks-13512b725dd3",
+   "title": "SQL Practice Made Easy: Using SQLite and Python in Jupyter Notebooks | by Adil Said | Medium",
+   "page_age": "2024-09-09T12:25:19",
+   "age": "September 9, 2024",
+   "meta_url": {
+    "hostname": "medium.com"
+   }
+  },
+  {
+   "url": "https://www.w3schools.com/python/python_mysql_getstarted.asp",
+   "title": "Python MySQL",
+   "page_age": null,
+   "age": null,
+   "meta_url": {
+    "hostname": "www.w3schools.com"
+   }
+  },
+  {
+   "url": "https://medium.com/@sdmodels/a-guide-to-using-sqlite-with-python-a45d7fc68c36",
+   "title": "A Guide to Using SQLite with Python | by Science, Technology and Income | Medium",
+   "page_age": "2024-01-29T15:15:08",
+   "age": "January 29, 2024",
+   "meta_url": {
+    "hostname": "medium.com"
+   }
+  },
+  {
+   "url": "https://www.instructables.com/Step-by-Step-Tutorial-on-Programming-SQLite-Databa/",
+   "title": "Step by Step Tutorial on Programming SQLite Database Using Python for Beginners : 9 Steps (with Pictures) - Instructables",
+   "page_age": "2025-05-09T00:00:00",
+   "age": "May 9, 2025",
+   "meta_url": {
+    "hostname": "www.instructables.com"
+   }
+  },
+  {
+   "url": "https://www.geeksforgeeks.org/python/python-sqlite-working-with-date-and-datetime/",
+   "title": "Python SQLite - Working with Date and DateTime - GeeksforGeeks",
+   "page_age": "2021-06-28T00:04:12",
+   "age": "June 28, 2021",
+   "meta_url": {
+    "hostname": "www.geeksforgeeks.org"
+   }
+  },
+  {
+   "url": "https://blog.sqlite.ai/sqlite-python-sqlalchemy",
+   "title": "How to use SQLAlchemy with SQLite: From Setup to Advanced Features",
+   "page_age": "2024-04-10T20:26:39",
+   "age": "April 10, 2024",
+   "meta_url": {
+    "hostname": "blog.sqlite.ai"
+   }
+  },
+  {
+   "url": "https://technoscripts.com/python-sqlite",
+   "title": "Python SQLite: 4 CRUD Operations, Zero Setup",
+   "page_age": "2026-07-18T08:58:01",
+   "age": "July 18, 2026",
+   "meta_url": {
+    "hostname": "technoscripts.com"
+   }
+  }
+ ]
+}

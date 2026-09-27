@@ -1,10 +1,14 @@
 # Goggles Studio
 
-A workbench for authoring [Brave Search Goggles](https://brave.com/goggles), in two
-views of the same question: **what did this Goggle replace?**
+A workbench for authoring [Brave Search Goggles](https://brave.com/goggles). One
+question, three surfaces, one recurring inquiry: **what did this Goggle replace?**
 
 - **Ranking diff** — what it did to the results page
 - **Grounding bake-off** — what it did to the sources an LLM gets grounded on
+- **News mix** — what it did to the outlets, and how old they actually are
+
+Goggles apply to `web/search`, `llm/context` and `news/search` — not to the local,
+image, video, suggest, spellcheck or answers endpoints.
 
 **Live: [goggles-studio.jonaddams.workers.dev](https://goggles-studio.jonaddams.workers.dev)**
 
@@ -113,18 +117,46 @@ volume, including a 2019 alpha announcement and an unrelated OAuth crate. The so
 look more authoritative and are substantially worse for the question, and nothing in
 the response says so.
 
+## News mix
+
+![The same question against news/search under different freshness windows and Goggles](docs/newsmix.png)
+
+The third tab runs the same question against `news/search` under two independent
+levers: a freshness window and a Goggle.
+
+**"News" does not mean recent.** With no `freshness` parameter, the endpoint returned
+18 results for *"python sqlite tutorial"* whose median age was **3.4 years** and whose
+oldest was **16.8 years** — a tutorial page published in November 2009, served as news.
+The endpoint is not a recency feed; it searches the news index and dates results by
+publication. Passing `freshness` is what makes it behave the way the name implies.
+
+| Config | Results | Outlets | Median age | Oldest | Outlets changed |
+|---|---|---|---|---|---|
+| no filters | 18 | 12 | 3.4y | **16.8y** | — |
+| past month | 8 | 7 | 13d | 19d | +6 / −11 |
+| past month + no mills | 9 | 8 | 14d | 19d | +6 / −10 |
+
+Freshness is the lever that costs you volume — 18 results down to 8. The Goggle then
+reshapes what remains without costing much: adding three `$discard` rules on top of the
+month window *raised* the result count to 9 and the outlet count to 8, by displacing
+mill content that was crowding out smaller publishers.
+
+That is the third variation on the same theme. A Goggle never changes how much you get
+back — it changes who is in it.
+
 ## Design
 
 ```
 src/lib/diff.ts       pure ranking diff — no network, no DOM, fully unit tested
 src/lib/grounding.ts  pure grounding-set metrics; shares hostOf with diff.ts
+src/lib/news.ts       pure news-mix metrics: outlets, concentration, recency
 src/lib/brave.ts      Brave API client; GET, switching to POST for long Goggles
 src/server/app.ts     the Hono API, with storage and guards injected
 src/server/ports.ts   interfaces the two runtimes implement differently
 src/server/budget.ts  soft daily cap on API spend
 src/server/index.ts   Node entrypoint  — in-memory cache, no guards
 src/worker.ts         Worker entrypoint — Cache API, rate limit, budget, SPA
-src/ui/               React studio, two tabs
+src/ui/               React studio, three tabs
 ```
 
 The API is a factory taking its dependencies as arguments, so the same routes run
@@ -149,7 +181,7 @@ back to back.
 20-result Brave payloads, so the classifier is verified against live data shapes
 without spending calls on every test run.
 
-## Three things learned from the live API
+## Four things learned from the live API
 
 **1. `mutated_by_goggles` is not a reliable "did my Goggle fire" signal.** It is
 reported per result cluster, and in practice appears on `videos` but not on `web`. A
@@ -164,7 +196,11 @@ the real diff locally.
 but a 8x difference in the requested cap producing identical output is hard to explain
 as estimation error.
 
-**3. Both GET and POST accept Goggles, with different shapes.** GET takes the Goggle as
+**3. `news/search` without `freshness` is not a news feed.** It returned a page from
+November 2009 as a news result. Anything grounding an assistant on "the news" without
+passing a freshness window is not getting news.
+
+**4. Both GET and POST accept Goggles, with different shapes.** GET takes the Goggle as
 a single url-encoded newline-separated string; POST takes `goggles` as a JSON array.
 The client uses GET and switches to POST past ~1500 characters, since a large Goggle
 otherwise risks request-URL length limits.
@@ -224,16 +260,18 @@ accounting.
 ## Tests
 
 ```bash
-npm test          # 37 tests
+npm test          # 48 tests
 npm run build     # typecheck + production build
-npm run shot      # regenerate both screenshots (needs `npm run dev` running)
+npm run shot      # regenerate all three screenshots (needs `npm run dev` running)
 ```
 
 The diff engine is covered for rank deltas, discards, the `pushedOut`/`dropped`
 distinction, host concentration, and empty-result edge cases; the cache, throttle and
 daily budget are tested with an injected clock. The grounding metrics are covered for
 source overlap, host concentration, snippet density, median freshness and empty
-contexts, against recorded `llm/context` responses. `npm run shot` doubles as a smoke test — it fails on
+contexts, against recorded `llm/context` responses; the news metrics cover outlet
+concentration, median and oldest recency, undated results and outlet churn, against
+recorded `news/search` responses. `npm run shot` doubles as a smoke test — it fails on
 any console error.
 
 ## Next

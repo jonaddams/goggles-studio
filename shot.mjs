@@ -30,6 +30,14 @@ await page.waitForTimeout(600)
 await page.screenshot({ path: 'docs/bakeoff.png', fullPage: true })
 console.log('bake-off rows:', await page.locator('table.bake tbody tr').count())
 
+// News mix
+await page.getByRole('button', { name: /News mix/ }).click()
+await page.click('button.run')
+await page.waitForSelector('table.bake', { timeout: 120_000 })
+await page.waitForTimeout(600)
+await page.screenshot({ path: 'docs/newsmix.png', fullPage: true })
+console.log('news rows:', await page.locator('table.bake tbody tr').count())
+
 console.log('console errors:', errors.length ? errors : 'none')
 await browser.close()
 if (errors.length) process.exitCode = 1
