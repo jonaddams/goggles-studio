@@ -82,32 +82,36 @@ That is not obvious from the syntax, where all three read like symmetric knobs.
 
 ![The same question grounded through llm/context under three different Goggles](docs/bakeoff.png)
 
-The second tab runs one question through `llm/context` under several Goggles and
-compares the grounding sets. Two results, both from the live API:
+The second tab runs the **same question** through `llm/context` under several Goggles
+and compares the grounding sets. Both tabs share one query deliberately — the point is
+to change the lens, not the subject.
 
-**A Goggle does not make grounding cheaper — it changes who fills the budget.** The
-same question returned ~8,000 estimated tokens with no Goggle, with a docs-only
-Goggle, and with a spam-filtering one. What changed was composition: the docs-only
-Goggle shared **zero of 18 sources** with the baseline and collapsed host diversity
-from 13 to 2, while a targeted `$discard` kept 15 of 19.
+**A Goggle does not make grounding cheaper — it changes who fills the budget.**
 
-**Authority is not freshness, and only one of them is visible without measuring.**
+| Goggle | Sources | Hosts | ~Tokens | Snippets/source | Shared with baseline |
+|---|---|---|---|---|---|
+| none | 14 | 13 | 7,774 | 3.9 | — |
+| docs only | 8 | **2** | 7,199 | **6.9** | **1/8** |
+| no content mills | 15 | 14 | 7,822 | 3.7 | 12/15 |
 
-| Goggle | Hosts | ~Tokens | Median source age | Shared with baseline |
-|---|---|---|---|---|
-| none | 13 | 8,030 | 630 days | — |
-| docs only | 2 | 7,929 | **2,476 days** | 0/20 |
-| no content mills | 12 | 7,985 | 951 days | 15/19 |
+The token volume barely moves. What moves is composition: `docs only` shares a single
+source with the baseline and collapses 13 hosts to 2, while packing nearly twice as
+many snippets into each surviving source. A targeted `$discard` keeps 12 of 15 and
+*raises* host count.
 
-Boosting `doc.rust-lang.org`, `docs.rs` and `tokio.rs` for a question about *tokio vs
-async-std* produced grounding with a median age of nearly seven years — four times
-staler than the ungoggled baseline, for the same token volume. Among what it pulled in:
-`tokio.rs/blog/2019-08-alphas` and `docs.rs/google-oauth`. The sources look more
-authoritative and are substantially worse for the question.
+And the overshoot from the ranking tab reappears here, one layer down. Of the 8 sources
+`docs only` grounds on, five are the same `sqlite3` page at different Python versions —
+`/3/`, `/3.7/`, `/2/`, `/3.1/`, `/2.5/` — alongside `sqlite.org/tcl2006-keynote.pdf`, a
+Tcl conference keynote from 2006. `$boost` promotes a whole host, so it reaches past
+the page you wanted into that host's archives.
 
-This is the same failure the ranking tab detects, one layer down: `$boost` promotes a
-whole host, so it reaches past the pages you wanted into everything else that host
-publishes.
+**Authority is not freshness.** On a faster-moving question the gap is starker. The
+in-app link loads *"rust async runtime tokio vs async-std"*, where boosting
+`doc.rust-lang.org`, `docs.rs` and `tokio.rs` grounds on sources with a median age of
+**2,476 days** against the baseline's 630 — four times staler for the same token
+volume, including a 2019 alpha announcement and an unrelated OAuth crate. The sources
+look more authoritative and are substantially worse for the question, and nothing in
+the response says so.
 
 ## Design
 

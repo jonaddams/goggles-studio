@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { GroundingSummary, BaselineComparison } from '../../lib/grounding.js'
-import { GROUND_CONFIGS, GROUND_QUERY } from '../groundPresets.js'
+import { GROUND_CONFIGS, FRESHNESS_EXAMPLE } from '../groundPresets.js'
 
 interface ConfigResult {
   name: string
@@ -19,8 +19,12 @@ interface GroundResponse {
 
 const days = (n: number | null) => (n === null ? '—' : `${Math.round(n)}d`)
 
-export function BakeOff() {
-  const [query, setQuery] = useState(GROUND_QUERY)
+interface Props {
+  query: string
+  setQuery: (q: string) => void
+}
+
+export function BakeOff({ query, setQuery }: Props) {
   const [configs, setConfigs] = useState(GROUND_CONFIGS)
   const [data, setData] = useState<GroundResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -46,6 +50,13 @@ export function BakeOff() {
     }
   }
 
+  /** Loads the question where the freshness gap is largest, Goggles and all. */
+  function loadFreshnessExample() {
+    setQuery(FRESHNESS_EXAMPLE.query)
+    setConfigs(FRESHNESS_EXAMPLE.configs)
+    setData(null)
+  }
+
   function editGoggle(i: number, goggle: string) {
     setConfigs((prev) => prev.map((c, j) => (j === i ? { ...c, goggle } : c)))
   }
@@ -64,7 +75,10 @@ export function BakeOff() {
       <p className="lede">
         The same question, grounded through <code>llm/context</code> under different Goggles.
         A Goggle here does not change <em>how much</em> an LLM is grounded on — it changes
-        <em> which pages</em> that grounding comes from.
+        <em> which pages</em> that grounding comes from.{' '}
+        <button className="linky" onClick={loadFreshnessExample}>
+          Try the question where a docs Goggle grounds on sources 4× staler →
+        </button>
       </p>
 
       <section className="controls">

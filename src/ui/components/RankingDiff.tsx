@@ -21,9 +21,13 @@ interface CompareResponse {
   }
 }
 
-export function RankingDiff() {
+interface Props {
+  query: string
+  setQuery: (q: string) => void
+}
+
+export function RankingDiff({ query, setQuery }: Props) {
   const first = PRESETS[0]!
-  const [query, setQuery] = useState(first.query)
   const [goggle, setGoggle] = useState(first.goggle)
   const [data, setData] = useState<CompareResponse | null>(null)
   const [error, setError] = useState<string | null>(null)

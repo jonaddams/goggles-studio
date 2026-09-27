@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { RankingDiff } from './components/RankingDiff.js'
 import { BakeOff } from './components/BakeOff.js'
+import { PRESETS } from './presets.js'
 
 type Tab = 'ranking' | 'grounding'
 
@@ -11,6 +12,9 @@ const TABS: { id: Tab; label: string; blurb: string }[] = [
 
 export function App() {
   const [tab, setTab] = useState<Tab>('ranking')
+  // One query across both tabs: a short demo should only ask the viewer to hold
+  // a single question in their head while the two views change around it.
+  const [query, setQuery] = useState(PRESETS[0]!.query)
 
   return (
     <div className="app">
@@ -19,7 +23,7 @@ export function App() {
           Goggles <span>Studio</span>
         </h1>
         <p className="tagline">
-          Two views of the same question: what a Brave Goggle <em>replaced</em>.
+          Two views of one question: what a Brave Goggle <em>replaced</em>.
         </p>
         <nav className="tabs">
           {TABS.map((t) => (
@@ -35,7 +39,11 @@ export function App() {
         </nav>
       </header>
 
-      {tab === 'ranking' ? <RankingDiff /> : <BakeOff />}
+      {tab === 'ranking' ? (
+        <RankingDiff query={query} setQuery={setQuery} />
+      ) : (
+        <BakeOff query={query} setQuery={setQuery} />
+      )}
     </div>
   )
 }
